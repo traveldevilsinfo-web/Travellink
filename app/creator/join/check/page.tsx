@@ -60,7 +60,7 @@ export default async function EligibilityCheck({ searchParams }: PageProps<'/cre
         <Link href="/creator/join/profile" className={buttonVariants({ size: 'lg', className: 'w-full' })}>Continue</Link>
       ) : !suspended && (
         <>
-          <div className="rounded-2xl bg-warning-50 p-5 text-sm"><b>You&apos;re on the waitlist</b><p className="mt-1 text-ink-2">We re-check your followers every day and will WhatsApp you the moment you cross {min.toLocaleString('en-IN')}. Meanwhile you can browse trips and see what you&apos;d earn.</p></div>
+          <div className="rounded-2xl bg-warning-50 p-5 text-sm"><b>You&apos;re on the waitlist</b><p className="mt-1 text-ink-2">We re-check your followers every day and unlock your account automatically once you cross {min.toLocaleString('en-IN')}. Meanwhile you can browse trips and see what you&apos;d earn.</p></div>
           <Link href="/trips" className={buttonVariants({ variant: 'outline', size: 'lg', className: 'w-full' })}>Browse trips</Link>
         </>
       )}

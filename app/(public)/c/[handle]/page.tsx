@@ -3,9 +3,12 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { CopyButton } from '@/components/creator/copy-button'
+import { ReelThumb } from '@/components/creator/reel-picker'
 import { TripGrid } from '@/components/trip/trip-card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { creatorByHandle } from '@/lib/public/queries'
 import { siteUrl } from '@/lib/site'
+import { compactNumber } from '@/lib/format'
 
 // Served at /@handle via proxy.ts rewrite. ISR 10 min (ARCHITECTURE §12).
 export const revalidate = 600
@@ -13,7 +16,6 @@ export async function generateStaticParams() {
   return []
 }
 
-const compact = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}K` : n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : String(n))
 
 export async function generateMetadata({ params }: PageProps<'/c/[handle]'>): Promise<Metadata> {
   const res = await creatorByHandle((await params).handle)
@@ -29,7 +31,9 @@ export async function generateMetadata({ params }: PageProps<'/c/[handle]'>): Pr
 export default async function Storefront({ params }: PageProps<'/c/[handle]'>) {
   const res = await creatorByHandle((await params).handle)
   if (!res) notFound()
-  const { creator, trips } = res
+  const { creator, trips, collections, reels } = res
+  const empty = !trips.length && !collections.length && !reels.length
+  const firstTab = trips.length ? 'trips' : collections.length ? 'collections' : 'reels'
   return (
     <main>
       <section className="border-b bg-card">
@@ -41,7 +45,7 @@ export default async function Storefront({ params }: PageProps<'/c/[handle]'>) {
             <h1 className="text-[26px] font-extrabold">{creator.display_name}</h1>
             <span className="text-ink-2">
               @{creator.handle}{creator.home_city && ` · ${creator.home_city}`}
-              {creator.instagram_followers ? ` · ${compact(creator.instagram_followers)} on Instagram` : ''}
+              {creator.instagram_followers ? ` · ${compactNumber(creator.instagram_followers)} on Instagram` : ''}
             </span>
             {creator.bio && <p className="max-w-[56ch]">{creator.bio}</p>}
             {creator.instagram_handle && (
@@ -50,18 +54,38 @@ export default async function Storefront({ params }: PageProps<'/c/[handle]'>) {
           </div>
           <span className="rounded-xl border bg-card"><CopyButton text={`${siteUrl()}/@${creator.handle}`} label="Copy storefront link" /></span>
         </div>
-        <nav className="mx-auto flex max-w-[1180px] gap-0.5 px-4 md:px-6" aria-label="Storefront sections">
-          <span aria-current="page" className="-mb-px inline-flex min-h-11 items-center border-b-[2.5px] border-brand px-3.5 font-semibold text-brand-700">Trips</span>
-        </nav>
       </section>
-      <section className="mx-auto max-w-[1180px] px-4 pt-5 pb-14 md:px-6">
-        {trips.length ? (
-          <TripGrid trips={trips} priorityCount={2} />
-        ) : (
-          <div className="rounded-2xl border bg-card px-6 py-12 text-center">
+      <section className="mx-auto max-w-[1180px] px-4 pt-3 pb-14 md:px-6">
+        {empty ? (
+          <div className="mt-2 rounded-2xl border bg-card px-6 py-12 text-center">
             <b>No trips listed yet</b>
             <p className="mt-1 text-sm text-ink-2">{creator.display_name} hasn&apos;t shared any trips yet. <Link href="/trips" className="font-semibold text-brand-700 hover:underline">Explore trips</Link></p>
           </div>
+        ) : (
+          <Tabs defaultValue={firstTab} className="gap-4">
+            <TabsList variant="line" aria-label="Storefront sections" className="h-auto! w-full justify-start border-b">
+              {([['trips', 'Trips', trips.length], ['collections', 'Collections', collections.length], ['reels', 'Reels', reels.length]] as const).filter(([, , n]) => n).map(([v, label, n]) => (
+                <TabsTrigger key={v} value={v} className="min-h-11 flex-none px-3.5 text-[15px] font-semibold after:bg-brand aria-selected:text-brand-700">{label} <span className="num text-ink-3">{n}</span></TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent value="trips"><TripGrid trips={trips} priorityCount={2} /></TabsContent>
+            <TabsContent value="collections" className="flex flex-col gap-8">
+              {collections.map((c) => <section key={c.id} className="flex flex-col gap-3"><h2 className="text-xl font-bold">{c.title}</h2><TripGrid trips={c.trips} /></section>)}
+            </TabsContent>
+            <TabsContent value="reels">
+              <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                {reels.map((r) => (
+                  <li key={r.reel_id} className="flex flex-col gap-1.5">
+                    <Link href={`/trips/${r.trip!.slug}`} className="relative block" aria-label={`Trip from this reel: ${r.trip!.title}`}>
+                      <ReelThumb src={r.thumbnail_url} className="rounded-xl" />
+                      <span className="absolute inset-x-1.5 bottom-1.5 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-white">{r.trip!.title}</span>
+                    </Link>
+                    {r.permalink && <a href={r.permalink} target="_blank" rel="noopener nofollow" className="text-xs font-semibold text-ink-2 hover:text-brand-700">Watch on Instagram</a>}
+                  </li>
+                ))}
+              </ul>
+            </TabsContent>
+          </Tabs>
         )}
       </section>
     </main>

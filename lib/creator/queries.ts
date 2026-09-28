@@ -58,12 +58,15 @@ export const commissionPct = (t: CatalogTrip) => Number(t.trip_commercials?.crea
 export const earnPerTravelerPaise = (t: CatalogTrip) => Math.round((t.from_price_paise * commissionPct(t)) / 100)
 export const nextDeparture = (t: CatalogTrip) => t.departures.filter((d) => d.status === 'open').map((d) => d.start_date).sort()[0] ?? null
 
-export type LinkRow = { id: string; code: string; label: string | null; trip_id: string | null; created_at: string; trips: { title: string; slug: string } | null }
+export type LinkRow = {
+  id: string; code: string; label: string | null; trip_id: string | null; created_at: string; trips: { title: string; slug: string } | null
+  creator_reels: { permalink: string | null; thumbnail_url: string | null; views: number | null } | null
+}
 export type StatRow = { day: string; link_id: string | null; clicks: number; unique_visitors: number; leads: number; bookings: number; gmv_paise: number; commission_paise: number }
 
 export async function linksWithStats(sb: Sb, creatorId: string, sinceDay?: string) {
   const [links, stats] = await Promise.all([
-    sb.from('creator_links').select('id, code, label, trip_id, created_at, trips!creator_links_trip_id_fkey(title, slug)').eq('creator_id', creatorId).eq('is_active', true).order('created_at', { ascending: false }),
+    sb.from('creator_links').select('id, code, label, trip_id, created_at, trips!creator_links_trip_id_fkey(title, slug), creator_reels!creator_links_reel_fk(permalink, thumbnail_url, views)').eq('creator_id', creatorId).eq('is_active', true).order('created_at', { ascending: false }),
     (sinceDay ? sb.from('creator_daily_stats').select('*').eq('creator_id', creatorId).gte('day', sinceDay) : sb.from('creator_daily_stats').select('*').eq('creator_id', creatorId)),
   ])
   const rows = (stats.data ?? []) as StatRow[]

@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSessionUser } from '@/lib/auth/guards'
 import { upsertCreatorFromInstagram } from '@/lib/creator/connect'
+import { refreshReels } from '@/lib/creator/sync'
 import { isProfessional } from '@/lib/domain/creator-gate'
 import { exchangeCode, fetchProfile } from '@/lib/integrations/instagram'
 import { siteUrl } from '@/lib/site'
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
     if (!isProfessional(profile.account_type)) return back('/creator/join/check?e=personal')
     const res = await upsertCreatorFromInstagram(user.id, profile, { value: token.token, expiresAt: token.expiresAt })
     if (res.status === 'taken') return back('/creator/join/connect?e=taken')
+    await refreshReels(res.creatorId).catch(() => 0) // reels are a nice-to-have at connect; the daily cron retries
     return back('/creator/join/check')
   } catch (e) {
     console.error('instagram callback', e instanceof Error ? e.message : e) // no tokens or PII in logs

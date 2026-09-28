@@ -2,6 +2,7 @@ import { Store } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { CatalogCard } from '@/components/creator/catalog-card'
+import { ReelThumb } from '@/components/creator/reel-picker'
 import { AreaChart } from '@/components/dash/area-chart'
 import { PageHeader } from '@/components/shell/app-shell'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +11,7 @@ import { nextPayoutDate } from '@/lib/creator/earnings'
 import { catalog, commissions, earnPerTravelerPaise, linksWithStats, monthStartIST, requireActiveCreator } from '@/lib/creator/queries'
 import { formatDateIST, todayIST } from '@/lib/domain/dates'
 import { formatINR } from '@/lib/domain/money'
+import { compactNumber } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'Home', robots: { index: false } }
 
@@ -75,9 +77,10 @@ export default async function CreatorHome() {
           <ul>
             {topLinks.map((l) => (
               <li key={l.id} className="flex items-center gap-3 border-t px-5 py-3.5">
+                {l.creator_reels && <span className="w-9 shrink-0"><ReelThumb src={l.creator_reels.thumbnail_url} /></span>}
                 <div className="min-w-0 flex-1">
                   <b className="block truncate">{l.label ?? l.trips?.title ?? 'Storefront'}</b>
-                  <span className="text-sm text-ink-2">{l.stats.clicks} clicks · {l.stats.leads} leads · {l.stats.bookings} bookings</span>
+                  <span className="text-sm text-ink-2">{l.creator_reels?.views != null && `${compactNumber(l.creator_reels.views)} views · `}{l.stats.clicks} clicks · {l.stats.leads} leads · {l.stats.bookings} bookings</span>
                 </div>
                 <b className="num">{formatINR(l.stats.commission_paise)}</b>
               </li>

@@ -144,20 +144,34 @@ export async function publishedReviews(tripId: string) {
 
 export type PublicCreator = { id: string; handle: string; display_name: string; bio: string | null; avatar_url: string | null; cover_url: string | null; instagram_handle: string | null; instagram_followers: number | null; home_city: string | null }
 
+export type StorefrontReel = { reel_id: string; permalink: string | null; thumbnail_url: string | null; posted_at: string | null; trip_id: string }
+
 export async function creatorByHandle(handle: string) {
   const sb = createPublicClient()
   const { data: creator } = await run<PublicCreator | null>(
     'creator', sb.from('creators').select('id, handle, display_name, bio, avatar_url, cover_url, instagram_handle, instagram_followers, home_city').eq('handle', handle.toLowerCase()).eq('status', 'active').maybeSingle(), null)
   if (!creator) return null
-  // Trips the creator links to (security-definer function; creator_links itself stays private) + trips they host.
-  // ponytail: ordering/collections arrive with storefront_items in Phase 2.
-  const { data: linked } = await run<{ trip_id: string }[]>('storefrontIds', sb.rpc('storefront_trip_ids', { p_handle: creator.handle }), [])
-  const ids = linked.map((r) => r.trip_id)
-  const { data: trips } = await run<TripCard[]>('storefrontTrips',
-    sb.from('trips').select(CARD).eq('status', 'published')
-      .or(ids.length ? `hosted_by_creator_id.eq.${creator.id},id.in.(${ids.join(',')})` : `hosted_by_creator_id.eq.${creator.id}`)
-      .order('published_at', { ascending: false }).limit(48), [])
-  return { creator, trips }
+  // RLS on storefront_items only returns public trips of active creators; reels come from a definer fn.
+  const [items, cols, reels, hosted] = await Promise.all([
+    run<{ collection_id: string | null; trip_id: string }[]>('storefrontItems', sb.from('storefront_items').select('collection_id, trip_id').eq('creator_id', creator.id).order('position'), []),
+    run<{ id: string; title: string }[]>('storefrontCollections', sb.from('storefront_collections').select('id, title').eq('creator_id', creator.id).order('position'), []),
+    run<StorefrontReel[]>('storefrontReels', sb.rpc('storefront_reels', { p_creator: creator.id }), []),
+    run<{ id: string }[]>('hostedTrips', sb.from('trips').select('id').eq('status', 'published').eq('hosted_by_creator_id', creator.id).limit(24), []),
+  ])
+  const ids = [...new Set([...items.data.map((i) => i.trip_id), ...reels.data.map((r) => r.trip_id), ...hosted.data.map((t) => t.id)])]
+  const { data: cards } = ids.length
+    ? await run<TripCard[]>('storefrontTrips', sb.from('trips').select(CARD).eq('status', 'published').in('id', ids), [])
+    : { data: [] as TripCard[] }
+  const byId = new Map(cards.map((t) => [t.id, t]))
+  const pick = (list: string[]) => list.map((id) => byId.get(id)).filter((t): t is TripCard => !!t)
+  const main = items.data.filter((i) => i.collection_id === null).map((i) => i.trip_id)
+  return {
+    creator,
+    // hosted trips always show; they lead the main list unless the creator placed them
+    trips: pick([...hosted.data.map((t) => t.id).filter((id) => !main.includes(id)), ...main]),
+    collections: cols.data.map((c) => ({ ...c, trips: pick(items.data.filter((i) => i.collection_id === c.id).map((i) => i.trip_id)) })).filter((c) => c.trips.length),
+    reels: reels.data.map((r) => ({ ...r, trip: byId.get(r.trip_id) })).filter((r) => r.trip).sort((a, b) => (b.posted_at ?? '').localeCompare(a.posted_at ?? '')),
+  }
 }
 
 export async function sitemapEntries() {

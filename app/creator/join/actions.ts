@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { requireUser } from '@/lib/auth/guards'
 import { simulationAllowed, upsertCreatorFromInstagram } from '@/lib/creator/connect'
+import { refreshReels } from '@/lib/creator/sync'
 import { type ActionResult, AppError, toSafeError } from '@/lib/errors'
 import { ratelimit } from '@/lib/security/ratelimit'
 import { throwIfError, isUniqueViolation } from '@/lib/supabase/errors'
@@ -17,6 +18,7 @@ export async function simulateInstagram(input: unknown): Promise<ActionResult> {
     await ratelimit('ig:sim', user.id, 20, '10 m')
     const res = await upsertCreatorFromInstagram(user.id, { user_id: `sim_${user.id}`, username, name: username, account_type: 'MEDIA_CREATOR', followers_count: followers, media_count: 120 }, null)
     if (res.status === 'taken') throw new AppError('invalid_input', 'That Instagram account is already connected to another TripLink creator.')
+    await refreshReels(res.creatorId)
   } catch (e) {
     return toSafeError(e)
   }

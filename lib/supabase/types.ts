@@ -780,6 +780,7 @@ export type Database = {
           id: string
           is_active: boolean
           label: string | null
+          reel_id: string | null
           trip_id: string | null
         }
         Insert: {
@@ -790,6 +791,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string | null
+          reel_id?: string | null
           trip_id?: string | null
         }
         Update: {
@@ -800,6 +802,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string | null
+          reel_id?: string | null
           trip_id?: string | null
         }
         Relationships: [
@@ -809,6 +812,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "creators"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_links_reel_fk"
+            columns: ["creator_id", "reel_id"]
+            isOneToOne: false
+            referencedRelation: "creator_reels"
+            referencedColumns: ["creator_id", "id"]
           },
           {
             foreignKeyName: "creator_links_trip_id_fkey"
@@ -870,6 +880,59 @@ export type Database = {
             foreignKeyName: "creator_private_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_reels: {
+        Row: {
+          caption: string | null
+          comments: number | null
+          creator_id: string
+          id: string
+          ig_media_id: string
+          likes: number | null
+          media_type: string | null
+          permalink: string | null
+          posted_at: string | null
+          synced_at: string
+          thumbnail_url: string | null
+          views: number | null
+        }
+        Insert: {
+          caption?: string | null
+          comments?: number | null
+          creator_id: string
+          id?: string
+          ig_media_id: string
+          likes?: number | null
+          media_type?: string | null
+          permalink?: string | null
+          posted_at?: string | null
+          synced_at?: string
+          thumbnail_url?: string | null
+          views?: number | null
+        }
+        Update: {
+          caption?: string | null
+          comments?: number | null
+          creator_id?: string
+          id?: string
+          ig_media_id?: string
+          likes?: number | null
+          media_type?: string | null
+          permalink?: string | null
+          posted_at?: string | null
+          synced_at?: string
+          thumbnail_url?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_reels_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
@@ -979,6 +1042,7 @@ export type Database = {
           languages: string[]
           referral_code: string
           status: Database["public"]["Enums"]["account_status"]
+          status_note: string | null
           tier: Database["public"]["Enums"]["creator_tier"]
           updated_at: string
           user_id: string
@@ -999,6 +1063,7 @@ export type Database = {
           languages?: string[]
           referral_code?: string
           status?: Database["public"]["Enums"]["account_status"]
+          status_note?: string | null
           tier?: Database["public"]["Enums"]["creator_tier"]
           updated_at?: string
           user_id: string
@@ -1019,6 +1084,7 @@ export type Database = {
           languages?: string[]
           referral_code?: string
           status?: Database["public"]["Enums"]["account_status"]
+          status_note?: string | null
           tier?: Database["public"]["Enums"]["creator_tier"]
           updated_at?: string
           user_id?: string
@@ -1952,6 +2018,87 @@ export type Database = {
           },
         ]
       }
+      storefront_collections: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          position: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          position?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          position?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storefront_collections_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      storefront_items: {
+        Row: {
+          collection_id: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          position: number
+          trip_id: string
+        }
+        Insert: {
+          collection_id?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          position?: number
+          trip_id: string
+        }
+        Update: {
+          collection_id?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          position?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storefront_items_creator_id_collection_id_fkey"
+            columns: ["creator_id", "collection_id"]
+            isOneToOne: false
+            referencedRelation: "storefront_collections"
+            referencedColumns: ["creator_id", "id"]
+          },
+          {
+            foreignKeyName: "storefront_items_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storefront_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           booking_id: string | null
@@ -2479,6 +2626,7 @@ export type Database = {
         Args: { p_city?: string; p_name: string; p_slug: string }
         Returns: string
       }
+      creator_is_active: { Args: { p_creator: string }; Returns: boolean }
       departure_trip: { Args: { p_dep: string }; Returns: string }
       expire_holds: { Args: never; Returns: number }
       gen_code: { Args: { p_len: number; p_prefix: string }; Returns: string }
@@ -2516,6 +2664,7 @@ export type Database = {
         }
         Returns: string
       }
+      promote_waitlist: { Args: never; Returns: number }
       refresh_creator_stats: { Args: { p_day?: string }; Returns: undefined }
       release_booked_seats: {
         Args: { p_departure: string; p_qty: number }
@@ -2525,11 +2674,19 @@ export type Database = {
         Args: { p_departure: string; p_qty: number }
         Returns: undefined
       }
+      set_storefront_list: {
+        Args: { p_collection: string; p_trip_ids: string[] }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
-      storefront_trip_ids: {
-        Args: { p_handle: string }
+      storefront_reels: {
+        Args: { p_creator: string }
         Returns: {
+          permalink: string
+          posted_at: string
+          reel_id: string
+          thumbnail_url: string
           trip_id: string
         }[]
       }

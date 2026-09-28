@@ -2,7 +2,8 @@
 
 import { Check, Copy, Link as LinkIcon } from 'lucide-react'
 import { useState, useTransition } from 'react'
-import { createLink } from '@/app/creator/(app)/actions'
+import { createLink, myReels, type ReelOption } from '@/app/creator/(app)/actions'
+import { ReelPicker } from '@/components/creator/reel-picker'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { captionFor } from '@/lib/validation/links'
@@ -13,6 +14,13 @@ export function GetLinkDialog({ tripId, tripTitle, siteHost, trigger }: { tripId
   const [error, setError] = useState<string>()
   const [copied, setCopied] = useState<'link' | 'caption'>()
   const [pending, start] = useTransition()
+  const [reels, setReels] = useState<ReelOption[]>()
+  const [reelId, setReelId] = useState<string | null>(null)
+  const [loadingReels, startReels] = useTransition()
+  const loadReels = (refresh: boolean) => startReels(async () => {
+    const r = await myReels({ refresh })
+    setReels(r.ok ? r.data ?? [] : [])
+  })
   const url = code ? `${siteHost}/r/${code}` : ''
 
   const copy = (what: 'link' | 'caption', text: string) => {
@@ -21,7 +29,7 @@ export function GetLinkDialog({ tripId, tripTitle, siteHost, trigger }: { tripId
   }
 
   return (
-    <Dialog onOpenChange={(o) => { if (!o) { setCode(undefined); setError(undefined) } }}>
+    <Dialog onOpenChange={(o) => { if (o) loadReels(false); else { setCode(undefined); setError(undefined); setReelId(null) } }}>
       <DialogTrigger render={(trigger as React.ReactElement) ?? <Button size="lg" className="w-full"><LinkIcon />Get my link</Button>} />
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
@@ -35,14 +43,24 @@ export function GetLinkDialog({ tripId, tripTitle, siteHost, trigger }: { tripId
               e.preventDefault()
               setError(undefined)
               start(async () => {
-                const res = await createLink({ tripId, label })
+                const res = await createLink({ tripId, label, reelId })
                 if (res.ok && res.data) setCode(res.data.code)
                 else if (!res.ok) setError(res.error)
               })
             }}
           >
+            <ReelPicker
+              reels={reels}
+              loading={loadingReels}
+              selected={reelId}
+              onRefresh={() => loadReels(true)}
+              onSelect={(r) => {
+                setReelId(r?.id ?? null)
+                setLabel(r ? `Reel · ${(r.caption ?? tripTitle).replace(/\s+/g, ' ').slice(0, 40)}` : `Reel · ${tripTitle.split(' ')[0]}`)
+              }}
+            />
             <label className="flex flex-col gap-1.5 text-sm font-semibold" htmlFor="link-label">
-              Which post is this for?
+              Link name
               <input id="link-label" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={80} className="h-12 rounded-xl border-[1.5px] px-3.5 text-base font-normal outline-none focus:border-brand focus:ring-4 focus:ring-brand-50" />
               <span className="font-normal text-ink-3">Only you see this, e.g. &ldquo;Reel · Chakrata vlog 12 Oct&rdquo;.</span>
             </label>
