@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
+import { siteUrl } from '@/lib/site'
 
 const sans = Plus_Jakarta_Sans({ variable: '--font-sans', subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(siteUrl()),
   title: { default: 'TripLink — creators share trips, operators get bookings', template: '%s · TripLink' },
   description:
     'The travel affiliate platform for India. Operators list trips, Instagram creators share affiliate links, and every click, lead and booking is tracked.',

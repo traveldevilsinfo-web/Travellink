@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next'
 import { sitemapEntries } from '@/lib/public/queries'
+import { siteUrl } from '@/lib/site'
 
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+  const base = siteUrl()
   const { trips, creators, destinations } = await sitemapEntries()
   return [
     { url: `${base}/`, changeFrequency: 'daily', priority: 1 },

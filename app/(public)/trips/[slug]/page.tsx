@@ -11,6 +11,7 @@ import { jsonLdScript, tripJsonLd } from '@/lib/domain/seo'
 import { publishedReviews, tripBySlug } from '@/lib/public/queries'
 import { publicMediaUrl } from '@/lib/storage'
 import { DepartureList } from './seats-left'
+import { siteUrl } from '@/lib/site'
 
 // ISR: cached per trip for an hour, refreshed on demand when the operator/admin edits it.
 export const revalidate = 3600
@@ -18,7 +19,6 @@ export async function generateStaticParams() {
   return [] // build nothing up front; render each trip on first request, then cache
 }
 
-const siteUrl = () => (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
 export async function generateMetadata({ params }: PageProps<'/trips/[slug]'>): Promise<Metadata> {
   const trip = await tripBySlug((await params).slug)

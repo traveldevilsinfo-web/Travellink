@@ -1,11 +1,7 @@
 import 'server-only'
-import { headers } from 'next/headers'
-import { env } from '@/lib/env'
+import { siteUrl } from '@/lib/site'
 
-/** Absolute site origin for auth redirect URLs. Prefers the configured URL so a spoofed Host can't redirect elsewhere. */
+/** Absolute site origin for auth redirect URLs. Configured, never from a spoofable Host header. */
 export async function siteOrigin(): Promise<string> {
-  if (env.NEXT_PUBLIC_SITE_URL) return env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
-  const h = await headers()
-  const host = h.get('host') ?? 'localhost:3000'
-  return `${host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https'}://${host}`
+  return siteUrl()
 }
