@@ -42,7 +42,8 @@ Next.js (App Router, TypeScript strict) · Tailwind + shadcn/ui · Supabase (`@s
 - [ ] Explains in the PR/summary: what changed, security impact, migrations added
 
 ## Build order (one milestone per session; see ARCHITECTURE §17)
-M0 Foundations → M1 Auth & roles → M2 Operator + trip CMS → M3 Public site → M4 Creator + links → M5 Checkout + payments → M6 Route settlements → M7 Balance/cancel/refunds → M8 Lifecycle + dashboards → M9 Payouts → M10 WhatsApp leads → M11 Trust & support → M12 Hardening.
+**v2 order (ARCHITECTURE §20.8 — the product is now "Wishlink for travel"; §20 overrides earlier sections):**
+M0 Foundations ✓ → M1 Auth & roles ✓ → M2 Operator + trip CMS ✓ → M3 Public site ✓ → M4 Creators + Instagram (1,000-follower gate) + links → M5 Leads + operator performance → M6 Redirect conversions + operator billing → M7 Creator payouts → M8 Platform checkout (Razorpay + Route) → M9+ refunds, lifecycle, trust, hardening.
 
 ### Starter prompt per milestone
 > "Implement milestone **M{n}** from ARCHITECTURE.md §17. First list the files you'll create or change and any migration needed, then wait for my OK. Follow AGENTS.md hard rules. Write the domain unit tests first for anything touching money, seats, attribution or refunds. At the end, show how each acceptance criterion is met."
