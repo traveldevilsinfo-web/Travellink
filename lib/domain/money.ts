@@ -28,9 +28,11 @@ export function rupeesToPaise(rupees: number): Paise {
   return p
 }
 
-const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 })
+const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })
+const inrPaise = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 })
 
 export function formatINR(amount: Paise): string {
   assertPaise(amount)
-  return inr.format(amount / 100)
+  // whole rupees read as ₹10,000; paise amounts keep both decimals (₹10,000.50)
+  return (amount % 100 === 0 ? inr : inrPaise).format(amount / 100)
 }

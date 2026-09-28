@@ -111,7 +111,8 @@ export async function tripBySlug(slug: string): Promise<TripDetail | null> {
   const sb = createPublicClient()
   const { data } = await run<TripDetail | null>('tripBySlug',
     sb.from('trips')
-      .select(`${CARD}, summary, description_md, start_city, difficulty, min_age, max_group_size, inclusions, exclusions, highlights,
+      .select(`id, slug, title, destination, state, trip_type, duration_days, duration_nights, from_price_paise, cover_image_path,
+        summary, description_md, start_city, difficulty, min_age, max_group_size, inclusions, exclusions, highlights,
         things_to_carry, updated_at, org_id,
         organizations(name, slug, city, legal_name, gstin, rating_avg, rating_count),
         cancellation_policies(name, rules, deposit_non_refundable),
