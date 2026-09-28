@@ -32,6 +32,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: supabase ? { remotePatterns: [new URL(`${supabase}/storage/v1/object/public/**`)] } : undefined,
+  experimental: {
+    // trip photos are ≤10 MB (ARCHITECTURE §3); one file per action call + multipart overhead
+    serverActions: { bodySizeLimit: '11mb' },
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },

@@ -1,3 +1,5 @@
+import { ZodError } from 'zod'
+
 export type AppErrorCode =
   | 'unauthenticated'
   | 'forbidden'
@@ -32,6 +34,7 @@ export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; 
 
 /** Maps any thrown error to a message safe to show users. Never leaks DB/upstream details. */
 export function toSafeError(e: unknown): { ok: false; error: string } {
+  if (e instanceof ZodError) return { ok: false, error: e.issues[0]?.message ?? 'Please check the form.' }
   if (e instanceof AppError) return { ok: false, error: SAFE_MESSAGES[e.code] ?? e.message }
   console.error(e) // ponytail: console until Sentry lands (M12)
   return { ok: false, error: 'Something went wrong. Please try again.' }

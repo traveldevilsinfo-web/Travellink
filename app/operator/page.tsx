@@ -1,17 +1,20 @@
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { buttonVariants } from '@/components/ui/button'
 import { myOrgs, requireUser } from '@/lib/auth/guards'
-import { AppError } from '@/lib/errors'
 
 export default async function OperatorHome() {
   const user = await requireUser('/operator')
-  const orgs = await myOrgs(user)
-  if (orgs.length === 0) throw new AppError('forbidden', 'No organization')
+  const membership = (await myOrgs(user))[0]
+  if (!membership || membership.organizations.status !== 'active') redirect('/operator/onboarding')
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-xl font-semibold">Operator dashboard</h1>
-      <ul className="mt-4 text-sm">
-        {orgs.map((m) => <li key={m.organizations.id}>{m.organizations.name} · {m.role} · {m.organizations.status}</li>)}
-      </ul>
-      <p className="mt-4 text-sm text-muted-foreground">Trips and departures arrive in M2.</p>
+      <h1 className="text-xl font-semibold">{membership.organizations.name}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Bookings and settlements arrive in later milestones.</p>
+      <div className="mt-6 flex gap-3">
+        <Link href="/operator/trips" className={buttonVariants()}>Manage trips</Link>
+        <Link href="/operator/onboarding" className={buttonVariants({ variant: 'outline' })}>Company & KYC</Link>
+      </div>
     </main>
   )
 }

@@ -80,3 +80,28 @@ export async function myOrgs(user: SessionUser) {
   return (data ?? []) as unknown as { role: OrgRole; organizations: { id: string; name: string; slug: string; status: string } }[]
 }
 
+
+/**
+ * The org the operator is working in. ponytail: first membership only; add an org switcher
+ * (cookie + requireOrgRole) when an owner actually runs two brands.
+ */
+export async function requireCurrentOrg(roles: OrgRole[] = ['owner', 'manager', 'staff'], { mfa = false } = {}, next = '/operator') {
+  const user = await requireUser(next)
+  const orgs = await myOrgs(user)
+  const first = orgs[0]
+  if (!first) redirect('/operator/onboarding')
+  const member = await requireOrgRole(first.organizations.id, roles, { mfa }, next)
+  return { ...member, org: first.organizations }
+}
+
+/**
+ * Operator access to one trip. trips_read also exposes *published* trips to everyone, so a readable
+ * trip proves nothing: look up its org, then check membership.
+ */
+export async function requireTripAccess(tripId: string, roles: OrgRole[] = ['owner', 'manager', 'staff']) {
+  const user = await requireUser('/operator/trips')
+  const { data: trip } = await user.supabase.from('trips').select('id, org_id').eq('id', tripId).maybeSingle()
+  if (!trip) throw new AppError('forbidden', 'Trip not found')
+  const member = await requireOrgRole((trip as { org_id: string }).org_id, roles, {}, '/operator/trips')
+  return { ...member, orgId: (trip as { org_id: string }).org_id }
+}
