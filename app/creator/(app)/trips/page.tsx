@@ -5,23 +5,18 @@ import { CatalogCard } from '@/components/creator/catalog-card'
 import { EmptyState } from '@/components/dash/kpi'
 import { PageHeader } from '@/components/shell/app-shell'
 import { catalog, earnPerTravelerPaise, requireActiveCreator } from '@/lib/creator/queries'
+import { CATALOG_FILTERS, filterCatalog, parseCatalogFilter } from '@/lib/domain/catalog'
 
 export const metadata: Metadata = { title: 'Find trips', robots: { index: false } }
 
-const FILTERS = [
-  ['all', 'All'], ['earning', 'Highest earning'], ['lead', 'Pays per lead'], ['platform', 'Book on TripLink'],
-] as const
-
 export default async function FindTrips({ searchParams }: PageProps<'/creator/trips'>) {
   const sp = await searchParams
-  const f = typeof sp.f === 'string' && FILTERS.some(([k]) => k === sp.f) ? sp.f : 'all'
-  const q = typeof sp.q === 'string' ? sp.q.trim().toLowerCase().slice(0, 60) : ''
-  const { supabase } = await requireActiveCreator('/creator/trips')
-  let trips = await catalog(supabase)
-  if (q) trips = trips.filter((t) => `${t.title} ${t.destination} ${t.organizations?.name ?? ''}`.toLowerCase().includes(q))
-  if (f === 'lead') trips = trips.filter((t) => t.lead_fee_paise > 0)
-  if (f === 'platform') trips = trips.filter((t) => t.booking_mode === 'platform')
-  if (f === 'earning') trips = [...trips].sort((a, b) => earnPerTravelerPaise(b) - earnPerTravelerPaise(a))
+  const f = parseCatalogFilter(sp.f)
+  const q = typeof sp.q === 'string' ? sp.q.trim().slice(0, 60) : ''
+  const { supabase, creator } = await requireActiveCreator('/creator/trips')
+  const all = (await catalog(supabase)).map((t) => ({ ...t, operator: t.organizations?.name ?? '', earn_paise: earnPerTravelerPaise(t) }))
+  // ponytail: filtered in memory; move to SQL when the catalog passes a few hundred trips
+  const trips = filterCatalog(all, f, q, creator.home_city)
 
   return (
     <>
@@ -32,7 +27,7 @@ export default async function FindTrips({ searchParams }: PageProps<'/creator/tr
         {f !== 'all' && <input type="hidden" name="f" value={f} />}
       </form>
       <nav className="mb-5 flex gap-2 overflow-x-auto" aria-label="Filters">
-        {FILTERS.map(([k, label]) => (
+        {CATALOG_FILTERS.map(([k, label]) => (
           <Link key={k} href={{ pathname: '/creator/trips', query: { ...(q ? { q } : {}), ...(k !== 'all' ? { f: k } : {}) } }} aria-current={f === k ? 'true' : undefined}
             className="inline-flex h-9 shrink-0 items-center rounded-full border bg-card px-3.5 text-sm font-semibold hover:border-ink-3 aria-[current=true]:border-ink aria-[current=true]:bg-ink aria-[current=true]:text-white">
             {label}
@@ -42,7 +37,7 @@ export default async function FindTrips({ searchParams }: PageProps<'/creator/tr
       {trips.length ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{trips.map((t, i) => <CatalogCard key={t.id} trip={t} priority={i < 2} />)}</div>
       ) : (
-        <EmptyState icon={<Search />} title="No trips match">
+        <EmptyState icon={<Search />} title={f === 'near' && !creator.home_city ? 'Add your home city to see trips near you' : 'No trips match'}>
           <Link href="/creator/trips" className="text-sm font-semibold text-brand-700 hover:underline">Clear filters</Link>
         </EmptyState>
       )}

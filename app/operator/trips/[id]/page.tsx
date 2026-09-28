@@ -11,7 +11,8 @@ import { operatorNextStatuses, readinessIssues, type TripStatus } from '@/lib/do
 import { tripReadiness } from '@/lib/operator/readiness'
 import { STATUS_LABEL } from '@/lib/operator/status'
 import { publicMediaUrl } from '@/lib/storage'
-import { CommissionForm, ItineraryForm, MediaManager, PickupsManager, StatusActions, TripDetailsForm } from '../trip-forms'
+import { AffiliateSettingsForm, ContentKitForm } from '../affiliate-forms'
+import { ItineraryForm, MediaManager, PickupsManager, StatusActions, TripDetailsForm } from '../trip-forms'
 
 export const metadata: Metadata = { title: 'Edit trip', robots: { index: false } }
 
@@ -21,6 +22,8 @@ type Trip = {
   difficulty: 'easy' | 'moderate' | 'hard' | null; min_age: number | null; max_group_size: number | null; from_price_paise: number
   inclusions: string[]; exclusions: string[]; highlights: string[]; things_to_carry: string[]
   cancellation_policy_id: string; cover_image_path: string | null; status: TripStatus; review_notes: string | null; published_at: string | null
+  booking_mode: 'platform' | 'redirect' | 'enquiry'; redirect_url: string | null; lead_fee_paise: number; lead_fee_monthly_cap: number | null
+  creator_hooks: string[]; creator_brief: string | null
 }
 
 export default async function EditTripPage({ params }: PageProps<'/operator/trips/[id]'>) {
@@ -65,7 +68,7 @@ export default async function EditTripPage({ params }: PageProps<'/operator/trip
           <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
           <TabsTrigger value="photos">Photos</TabsTrigger>
           <TabsTrigger value="pickups">Pickups</TabsTrigger>
-          <TabsTrigger value="commission">Commission</TabsTrigger>
+          <TabsTrigger value="creators">Creators</TabsTrigger>
         </TabsList>
         <TabsContent value="details" className="pt-4">
           <TripDetailsForm
@@ -107,13 +110,20 @@ export default async function EditTripPage({ params }: PageProps<'/operator/trip
             }))}
           />
         </TabsContent>
-        <TabsContent value="commission" className="pt-4">
-          <CommissionForm
+        <TabsContent value="creators" className="flex flex-col gap-8 pt-4">
+          <AffiliateSettingsForm
             tripId={t.id}
             floor={floor}
-            current={(comm.data as { creator_commission_pct: number } | null)?.creator_commission_pct}
+            fromPricePaise={t.from_price_paise}
             canEdit={orgRole !== 'staff'}
+            defaults={{
+              creatorCommissionPct: String((comm.data as { creator_commission_pct: number } | null)?.creator_commission_pct ?? Math.max(floor, 10)),
+              bookingMode: t.booking_mode, redirectUrl: t.redirect_url ?? '',
+              leadFeeOn: t.lead_fee_paise > 0, leadFeeRupees: String(t.lead_fee_paise ? t.lead_fee_paise / 100 : 200),
+              leadFeeMonthlyCap: String(t.lead_fee_monthly_cap ?? 0),
+            }}
           />
+          <ContentKitForm tripId={t.id} defaults={{ hooks: t.creator_hooks.join('\n'), brief: t.creator_brief ?? '' }} />
         </TabsContent>
       </Tabs>
     </div>

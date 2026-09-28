@@ -65,6 +65,25 @@ export const CommissionSchema = z.object({
   creatorCommissionPct: z.coerce.number<string | number>().min(5).max(40).multipleOf(0.01),
 })
 
+/** Trip → Creators tab. Mirrors the DB checks: redirect needs an https URL, lead fee ≤ ₹1,000, cap 1–10,000. */
+export const AffiliateSettingsSchema = CommissionSchema.extend({
+  bookingMode: z.enum(['platform', 'redirect', 'enquiry']),
+  redirectUrl: z.string().trim().max(500),
+  leadFeeOn: z.boolean(),
+  leadFeeRupees: z.coerce.number<string | number>().int('Whole rupees only').min(0).max(1000, 'At most ₹1,000 per lead'),
+  leadFeeMonthlyCap: z.coerce.number<string | number>().int().min(0).max(10_000),
+}).superRefine((v, ctx) => {
+  if (v.bookingMode === 'redirect' && !/^https:\/\/[^\s]+\.[^\s]+$/.test(v.redirectUrl)) {
+    ctx.addIssue({ code: 'custom', path: ['redirectUrl'], message: 'Enter your booking page URL, starting with https://' })
+  }
+  if (v.leadFeeOn && v.leadFeeRupees < 50) ctx.addIssue({ code: 'custom', path: ['leadFeeRupees'], message: 'Lead fee must be at least ₹50' })
+})
+
+export const ContentKitSchema = z.object({
+  hooks: lines(10),
+  brief: z.string().trim().max(1500),
+})
+
 export const DepartureSchema = z
   .object({
     startDate: isoDate,

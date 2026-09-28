@@ -6,10 +6,31 @@ import { requireActiveCreator } from '@/lib/creator/queries'
 import { refreshReels } from '@/lib/creator/sync'
 import { type ActionResult, toSafeError } from '@/lib/errors'
 import { ratelimit } from '@/lib/security/ratelimit'
-import { throwIfError } from '@/lib/supabase/errors'
+import { isUniqueViolation, throwIfError } from '@/lib/supabase/errors'
 import { CollectionSchema, CreateLinkSchema, StorefrontListSchema } from '@/lib/validation/links'
 
 const revalidateStorefront = (handle: string) => { revalidatePath('/creator/storefront'); revalidatePath(`/c/${handle}`) }
+
+type Ctx = Awaited<ReturnType<typeof requireActiveCreator>>
+/** Adds a trip to the end of the storefront's main list; a no-op (unique violation) if it's already there. */
+async function appendToStorefront(supabase: Ctx['supabase'], creator: Ctx['creator'], tripId: string) {
+  const { data: last } = await supabase.from('storefront_items').select('position').eq('creator_id', creator.id).is('collection_id', null).order('position', { ascending: false }).limit(1).maybeSingle()
+  const { error } = await supabase.from('storefront_items').insert({ creator_id: creator.id, trip_id: tripId, position: (last?.position ?? 0) + 1 })
+  if (error && !isUniqueViolation(error)) throwIfError(error, 'add to storefront')
+  revalidateStorefront(creator.handle)
+}
+
+export async function addToStorefront(input: unknown): Promise<ActionResult> {
+  try {
+    const { supabase, creator } = await requireActiveCreator('/creator/trips')
+    const { tripId } = z.object({ tripId: z.guid() }).parse(input)
+    await ratelimit('storefront:save', creator.id, 120, '1 h')
+    await appendToStorefront(supabase, creator, tripId)
+    return { ok: true }
+  } catch (e) {
+    return toSafeError(e)
+  }
+}
 
 export async function createLink(input: unknown): Promise<ActionResult<{ code: string }>> {
   try {
@@ -23,12 +44,7 @@ export async function createLink(input: unknown): Promise<ActionResult<{ code: s
       .select('code')
       .single()
     throwIfError(error, 'create link')
-    if (data.tripId) {
-      // A linked trip joins the end of the storefront's main list (no-op if it's already there).
-      const { data: last } = await supabase.from('storefront_items').select('position').eq('creator_id', creator.id).is('collection_id', null).order('position', { ascending: false }).limit(1).maybeSingle()
-      await supabase.from('storefront_items').insert({ creator_id: creator.id, trip_id: data.tripId, position: (last?.position ?? 0) + 1 })
-      revalidateStorefront(creator.handle)
-    }
+    if (data.tripId) await appendToStorefront(supabase, creator, data.tripId)
     revalidatePath('/creator/links')
     return { ok: true, data: { code: String(row!.code) } }
   } catch (e) {

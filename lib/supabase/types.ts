@@ -2413,6 +2413,8 @@ export type Database = {
           country: string
           cover_image_path: string | null
           created_at: string
+          creator_brief: string | null
+          creator_hooks: string[]
           description_md: string | null
           destination: string
           difficulty: string | null
@@ -2450,6 +2452,8 @@ export type Database = {
           country?: string
           cover_image_path?: string | null
           created_at?: string
+          creator_brief?: string | null
+          creator_hooks?: string[]
           description_md?: string | null
           destination: string
           difficulty?: string | null
@@ -2487,6 +2491,8 @@ export type Database = {
           country?: string
           cover_image_path?: string | null
           created_at?: string
+          creator_brief?: string | null
+          creator_hooks?: string[]
           description_md?: string | null
           destination?: string
           difficulty?: string | null

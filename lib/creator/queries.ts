@@ -31,7 +31,8 @@ export async function requireActiveCreator(next = '/creator'): Promise<CreatorCo
 }
 
 export type CatalogTrip = {
-  id: string; slug: string; title: string; destination: string; state: string | null
+  id: string; slug: string; title: string; destination: string; state: string | null; start_city: string | null
+  creator_hooks: string[]; creator_brief: string | null
   duration_days: number; duration_nights: number; from_price_paise: number; cover_image_path: string | null
   booking_mode: 'platform' | 'redirect' | 'enquiry'; lead_fee_paise: number
   organizations: { name: string } | null
@@ -39,7 +40,7 @@ export type CatalogTrip = {
   departures: { start_date: string; status: string }[]
 }
 
-const CATALOG = `id, slug, title, destination, state, duration_days, duration_nights, from_price_paise, cover_image_path,
+const CATALOG = `id, slug, title, destination, state, start_city, creator_hooks, creator_brief, duration_days, duration_nights, from_price_paise, cover_image_path,
   booking_mode, lead_fee_paise, organizations(name), trip_commercials(creator_commission_pct),
   departures(start_date, status)`
 

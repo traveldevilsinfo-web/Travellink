@@ -14,7 +14,8 @@ import { revalidatePublicTrip } from '@/lib/public/revalidate'
 import { ratelimit } from '@/lib/security/ratelimit'
 import { isUniqueViolation, throwIfError } from '@/lib/supabase/errors'
 import {
-  CommissionSchema,
+  AffiliateSettingsSchema,
+  ContentKitSchema,
   ItinerarySchema,
   MEDIA_MAX_BYTES,
   MEDIA_MIME,
@@ -212,20 +213,46 @@ export async function deletePickup(input: unknown): Promise<ActionResult> {
   }
 }
 
-export async function saveCommission(input: unknown): Promise<ActionResult> {
+/** Trip → Creators tab: commission, lead fee, booking mode. Owners/managers only (DB trigger + RLS agree). */
+export async function saveAffiliateSettings(input: unknown): Promise<ActionResult> {
   try {
     const { tripId, ...rest } = z.object({ tripId: Id }).loose().parse(input)
-    const { supabase } = await requireTripAccess(tripId, ['owner', 'manager'])
-    const { creatorCommissionPct } = CommissionSchema.parse(rest)
+    const { supabase, id: userId } = await requireTripAccess(tripId, ['owner', 'manager'])
+    const d = AffiliateSettingsSchema.parse(rest)
+    await ratelimit('trip:settings', userId, 60, '1 h')
     const { data: setting } = await supabase.rpc('get_public_setting', { p_key: 'commission' })
     const floor = Number((setting as { min_creator_pct?: number } | null)?.min_creator_pct ?? 8)
-    if (creatorCommissionPct < floor) throw new AppError('invalid_input', `Creator commission must be at least ${floor}%`)
+    if (d.creatorCommissionPct < floor) throw new AppError('invalid_input', `Creator commission must be at least ${floor}%`)
+
+    const { error: tErr } = await supabase.from('trips').update({
+      booking_mode: d.bookingMode,
+      redirect_url: d.redirectUrl || null,
+      lead_fee_paise: d.leadFeeOn ? rupeesToPaise(d.leadFeeRupees) : 0,
+      lead_fee_monthly_cap: d.leadFeeOn && d.leadFeeMonthlyCap > 0 ? d.leadFeeMonthlyCap : null,
+    }).eq('id', tripId)
+    throwIfError(tErr, 'save trip settings')
+    // ponytail: two writes, not one transaction; both are idempotent so a retry heals a partial save.
     const { error } = await supabase
       .from('trip_commercials')
-      .upsert({ trip_id: tripId, creator_commission_pct: creatorCommissionPct, updated_at: new Date().toISOString() }, { onConflict: 'trip_id' })
+      .upsert({ trip_id: tripId, creator_commission_pct: d.creatorCommissionPct, updated_at: new Date().toISOString() }, { onConflict: 'trip_id' })
     throwIfError(error, 'save commission')
     revalidatePath(`/operator/trips/${tripId}`)
+    revalidatePath('/operator/trips')
     await revalidatePublicTrip(supabase, tripId)
+    return { ok: true }
+  } catch (e) {
+    return toSafeError(e)
+  }
+}
+
+export async function saveContentKit(input: unknown): Promise<ActionResult> {
+  try {
+    const { tripId, ...rest } = z.object({ tripId: Id }).loose().parse(input)
+    const { supabase } = await requireTripAccess(tripId)
+    const d = ContentKitSchema.parse(rest)
+    const { error } = await supabase.from('trips').update({ creator_hooks: d.hooks, creator_brief: d.brief || null }).eq('id', tripId)
+    throwIfError(error, 'save content kit')
+    revalidatePath(`/operator/trips/${tripId}`)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)

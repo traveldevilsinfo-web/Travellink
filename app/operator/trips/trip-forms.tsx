@@ -12,7 +12,6 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import type { TripStatus } from '@/lib/domain/trips'
 import {
-  CommissionSchema,
   type ItineraryInput,
   ItinerarySchema,
   MEDIA_MAX_BYTES,
@@ -27,7 +26,6 @@ import {
   createTrip,
   deletePickup,
   deleteTripMedia,
-  saveCommission,
   saveItinerary,
   setCover,
   updateTripDetails,
@@ -246,27 +244,6 @@ export function PickupsManager({ tripId, pickups }: { tripId: string; pickups: P
       </form>
       <ActionStatus status={status} />
     </div>
-  )
-}
-
-export function CommissionForm({ tripId, current, floor, canEdit }: { tripId: string; current?: number; floor: number; canEdit: boolean }) {
-  const form = useForm({ resolver: zodResolver(CommissionSchema), defaultValues: { creatorCommissionPct: String(current ?? floor) } })
-  const { pending, status, run } = useAction()
-  if (!canEdit) return <p className="text-sm">Creator commission: {current != null ? `${current}%` : 'not set'}. Only owners and managers can change it.</p>
-  return (
-    <form onSubmit={form.handleSubmit((v) => run(() => saveCommission({ ...v, tripId }), 'Saved'))} className="flex flex-col gap-3" noValidate>
-      <Field data-invalid={!!form.formState.errors.creatorCommissionPct}>
-        <FieldLabel htmlFor="pct">Creator commission (%)</FieldLabel>
-        <Input id="pct" type="number" inputMode="decimal" step="0.01" min={floor} max={40} {...form.register('creatorCommissionPct')} />
-        <FieldDescription>
-          Paid to the creator whose link brought the booking, on the price before GST. Minimum {floor}%. Creators see this; travelers never do.
-          Changes apply to new bookings only.
-        </FieldDescription>
-        <FieldError errors={[form.formState.errors.creatorCommissionPct]} />
-      </Field>
-      <Button type="submit" disabled={pending}>Save commission</Button>
-      <ActionStatus status={status} />
-    </form>
   )
 }
 

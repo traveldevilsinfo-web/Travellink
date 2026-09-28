@@ -28,8 +28,9 @@ Secrets live only in Vercel env vars (Preview vs Production separated) and `.env
 | 0 | Deploy pipeline (Vercel team td-web1, previews behind Vercel login) | ✅ done |
 | 1 | Link tracking: /r redirect, signed cookie, trip landing + storefront restyle | ✅ done |
 | 2 | Instagram reels, storefront editor, waitlist cron + admin override | ✅ done |
-| **3** | Operator affiliate settings + catalog extras | ⏭ next |
-| 4–8 | below | planned |
+| 3 | Operator affiliate settings, content kit, catalog filters | ✅ done |
+| **4** | Leads (enquire + OTP, inbox, Mark booked) | ⏭ next |
+| 5–8 | below | planned |
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DepartureSchema, TripDetailsSchema } from './trips'
+import { AffiliateSettingsSchema, DepartureSchema, TripDetailsSchema } from './trips'
 import { OrgDetailsSchema } from './operator'
 
 const trip = {
@@ -47,5 +47,22 @@ describe('OrgDetailsSchema GSTIN', () => {
   })
   it('rejects a malformed GSTIN', () => {
     expect(OrgDetailsSchema.safeParse({ ...base, gstin: '07AABCT1332L1Z' }).success).toBe(false)
+  })
+})
+
+describe('AffiliateSettingsSchema', () => {
+  const base = { creatorCommissionPct: '10', bookingMode: 'platform', redirectUrl: '', leadFeeOn: false, leadFeeRupees: '0', leadFeeMonthlyCap: '0' } as const
+  it('accepts TripLink checkout without a URL', () => {
+    expect(AffiliateSettingsSchema.safeParse(base).success).toBe(true)
+  })
+  it('requires an https URL for redirect mode', () => {
+    expect(AffiliateSettingsSchema.safeParse({ ...base, bookingMode: 'redirect' }).success).toBe(false)
+    expect(AffiliateSettingsSchema.safeParse({ ...base, bookingMode: 'redirect', redirectUrl: 'http://td.in/x' }).success).toBe(false)
+    expect(AffiliateSettingsSchema.safeParse({ ...base, bookingMode: 'redirect', redirectUrl: 'https://td.in/x' }).success).toBe(true)
+  })
+  it('bounds the lead fee', () => {
+    expect(AffiliateSettingsSchema.safeParse({ ...base, leadFeeOn: true, leadFeeRupees: '20' }).success).toBe(false)
+    expect(AffiliateSettingsSchema.safeParse({ ...base, leadFeeOn: true, leadFeeRupees: '1500' }).success).toBe(false)
+    expect(AffiliateSettingsSchema.safeParse({ ...base, leadFeeOn: true, leadFeeRupees: '200' }).success).toBe(true)
   })
 })

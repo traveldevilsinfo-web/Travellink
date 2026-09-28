@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { MODE_LABEL } from '@/components/creator/catalog-card'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { requireCurrentOrg } from '@/lib/auth/guards'
@@ -12,11 +13,14 @@ export default async function TripsPage() {
   const { supabase, org } = await requireCurrentOrg()
   const { data } = await supabase
     .from('trips')
-    .select('id, title, destination, status, duration_days, duration_nights, from_price_paise, updated_at')
+    .select('id, title, destination, status, duration_days, duration_nights, from_price_paise, booking_mode, lead_fee_paise, updated_at, trip_commercials(creator_commission_pct)')
     .eq('org_id', org.id)
     .neq('status', 'archived')
     .order('updated_at', { ascending: false })
-  const trips = (data ?? []) as { id: string; title: string; destination: string; status: string; duration_days: number; duration_nights: number; from_price_paise: number }[]
+  const trips = (data ?? []) as unknown as {
+    id: string; title: string; destination: string; status: string; duration_days: number; duration_nights: number; from_price_paise: number
+    booking_mode: keyof typeof MODE_LABEL; lead_fee_paise: number; trip_commercials: { creator_commission_pct: number } | null
+  }[]
 
   return (
     <div className="max-w-3xl">
@@ -45,6 +49,10 @@ export default async function TripsPage() {
                     <p className="truncate font-medium">{t.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {t.destination} · {t.duration_days}D/{t.duration_nights}N · from {formatINR(t.from_price_paise)}
+                    </p>
+                    <p className="mt-1 text-sm">
+                      {t.trip_commercials ? <b>{Number(t.trip_commercials.creator_commission_pct)}% commission</b> : <span className="text-warning">Commission not set</span>}
+                      {' · '}{MODE_LABEL[t.booking_mode][0]}{t.lead_fee_paise > 0 && ` · ${formatINR(t.lead_fee_paise)}/lead`}
                     </p>
                   </div>
                   <Badge variant={s.variant}>{s.label}</Badge>

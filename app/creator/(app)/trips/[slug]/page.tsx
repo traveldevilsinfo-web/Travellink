@@ -1,9 +1,11 @@
-import { ChevronRight, ShieldCheck, Store } from 'lucide-react'
+import { ChevronRight, ShieldCheck } from 'lucide-react'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { AddToStorefront } from '@/components/creator/add-to-storefront'
 import { ModeBadge } from '@/components/creator/catalog-card'
+import { ContentKit } from '@/components/creator/content-kit'
 import { GetLinkDialog } from '@/components/creator/get-link-dialog'
 import { Badge } from '@/components/ui/badge'
 import { catalog, commissionPct, earnPerTravelerPaise, nextDeparture, requireActiveCreator } from '@/lib/creator/queries'
@@ -22,10 +24,13 @@ const HOW = {
 
 export default async function CreatorTrip({ params }: PageProps<'/creator/trips/[slug]'>) {
   const { slug } = await params
-  const { supabase } = await requireActiveCreator(`/creator/trips/${slug}`)
+  const { supabase, creator } = await requireActiveCreator(`/creator/trips/${slug}`)
   const [trip] = await catalog(supabase, { slug })
   if (!trip) notFound()
-  const { data: media } = await supabase.from('trip_media').select('storage_path').eq('trip_id', trip.id).order('sort_order').limit(3)
+  const [{ data: media }, { count: onStorefront }] = await Promise.all([
+    supabase.from('trip_media').select('storage_path').eq('trip_id', trip.id).order('sort_order').limit(20),
+    supabase.from('storefront_items').select('id', { count: 'exact', head: true }).eq('creator_id', creator.id).eq('trip_id', trip.id).is('collection_id', null),
+  ])
   const photos = (media ?? []).map((m) => publicMediaUrl(m.storage_path))
   const next = nextDeparture(trip)
   const earn = earnPerTravelerPaise(trip)
@@ -55,6 +60,7 @@ export default async function CreatorTrip({ params }: PageProps<'/creator/trips/
               <div key={a}><div className="text-xs font-bold tracking-wide text-ink-3 uppercase">{a}</div><div className="num text-[22px] font-extrabold">{b}</div><div className="text-xs text-ink-2">{c}</div></div>
             ))}
           </div>
+          <ContentKit hooks={trip.creator_hooks} brief={trip.creator_brief} photos={photos} slug={trip.slug} />
           <section><h2 className="mb-2.5 text-lg font-bold">How this trip is booked</h2><p className="rounded-2xl border bg-card p-5 text-sm text-ink-2">{HOW[trip.booking_mode]}</p></section>
           <section><h2 className="mb-2.5 text-lg font-bold">How you get paid</h2>
             <ol className="flex list-decimal flex-col gap-1.5 rounded-2xl border bg-card py-5 pr-5 pl-10 text-sm">
@@ -69,7 +75,7 @@ export default async function CreatorTrip({ params }: PageProps<'/creator/trips/
           <div className="num text-[32px] font-extrabold tracking-[-0.02em]">{formatINR(earn)}</div>
           {trip.lead_fee_paise > 0 && <div className="text-sm">+ <b>{formatINR(trip.lead_fee_paise)}</b> per qualified enquiry</div>}
           <GetLinkDialog tripId={trip.id} tripTitle={trip.title} siteHost={siteUrl()} />
-          <Link href="/creator/storefront" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-card font-semibold hover:border-ink-3"><Store className="size-5" />Add to storefront</Link>
+          <AddToStorefront tripId={trip.id} added={!!onStorefront} />
           <p className="text-xs text-ink-3">Travelers never see your commission.</p>
         </aside>
       </div>
