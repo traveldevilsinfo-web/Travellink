@@ -7,6 +7,7 @@ import { refreshReels } from '@/lib/creator/sync'
 import { type ActionResult, toSafeError } from '@/lib/errors'
 import { ratelimit } from '@/lib/security/ratelimit'
 import { isUniqueViolation, throwIfError } from '@/lib/supabase/errors'
+import { RespondInviteSchema } from '@/lib/validation/invites'
 import { CollectionSchema, CreateLinkSchema, StorefrontListSchema } from '@/lib/validation/links'
 
 const revalidateStorefront = (handle: string) => { revalidatePath('/creator/storefront'); revalidatePath(`/c/${handle}`) }
@@ -108,6 +109,22 @@ export async function deleteCollection(input: unknown): Promise<ActionResult> {
     const { error } = await supabase.from('storefront_collections').delete().eq('id', id).eq('creator_id', creator.id)
     throwIfError(error, 'delete collection')
     revalidateStorefront(creator.handle)
+    return { ok: true }
+  } catch (e) {
+    return toSafeError(e)
+  }
+}
+
+/** respond_collab_invite() checks the invite is ours and pending; accepting a custom rate creates the override. */
+export async function respondInvite(input: unknown): Promise<ActionResult> {
+  try {
+    const { supabase, creator } = await requireActiveCreator('/creator')
+    const d = RespondInviteSchema.parse(input)
+    await ratelimit('invite:respond', creator.id, 60, '1 h')
+    const { error } = await supabase.rpc('respond_collab_invite', { p_invite: d.inviteId, p_accept: d.accept })
+    throwIfError(error, 'respond invite')
+    revalidatePath('/creator')
+    revalidatePath('/creator/trips')
     return { ok: true }
   } catch (e) {
     return toSafeError(e)

@@ -2,13 +2,14 @@ import { Store } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { CatalogCard } from '@/components/creator/catalog-card'
+import { InviteCard } from '@/components/creator/invite-card'
 import { ReelThumb } from '@/components/creator/reel-picker'
 import { AreaChart } from '@/components/dash/area-chart'
 import { PageHeader } from '@/components/shell/app-shell'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { nextPayoutDate } from '@/lib/creator/earnings'
-import { catalog, commissions, earnPerTravelerPaise, linksWithStats, monthStartIST, requireActiveCreator } from '@/lib/creator/queries'
+import { catalog, commissions, earnPerTravelerPaise, linksWithStats, monthStartIST, pendingInvites, requireActiveCreator } from '@/lib/creator/queries'
 import { formatDateIST, todayIST } from '@/lib/domain/dates'
 import { formatINR } from '@/lib/domain/money'
 import { compactNumber } from '@/lib/format'
@@ -18,7 +19,7 @@ export const metadata: Metadata = { title: 'Home', robots: { index: false } }
 export default async function CreatorHome() {
   const { supabase, creator } = await requireActiveCreator()
   const month = monthStartIST()
-  const [stats, comms, trips] = await Promise.all([linksWithStats(supabase, creator.id, month), commissions(supabase, creator.id), catalog(supabase, { limit: 12 })])
+  const [stats, comms, trips, invites] = await Promise.all([linksWithStats(supabase, creator.id, month), commissions(supabase, creator.id), catalog(supabase, { limit: 12 }), pendingInvites(supabase, creator.id)])
 
   const thisMonth = comms.filter((c) => c.created_at.slice(0, 10) >= month && c.status !== 'reversed')
   const earned = thisMonth.reduce((s, c) => s + c.amount_paise, 0)
@@ -38,6 +39,11 @@ export default async function CreatorHome() {
         title={`Hi ${creator.display_name.split(' ')[0]}`}
         actions={<Link href="/creator/storefront" className={buttonVariants({ variant: 'outline' })}><Store />My storefront</Link>}
       />
+      {invites.length > 0 && (
+        <section className="mb-4" aria-label="Invites">
+          <ul className="flex flex-col gap-2">{invites.map((i) => <InviteCard key={i.id} id={i.id} org={i.organizations?.name ?? 'An operator'} trip={i.trips?.title ?? 'a trip'} slug={i.trips?.slug ?? ''} pct={i.commission_pct != null ? Number(i.commission_pct) : null} message={i.message} />)}</ul>
+        </section>
+      )}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <section className="flex flex-col gap-1.5 rounded-2xl border bg-card p-5">
           <span className="text-sm text-ink-2">Earned this month</span>

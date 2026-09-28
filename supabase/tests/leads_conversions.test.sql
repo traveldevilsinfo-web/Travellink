@@ -38,7 +38,7 @@ select lives_ok($$select public.mark_lead_booked((select lead_id from _l), 'TD-1
 select throws_ok($$select public.mark_lead_booked((select lead_id from _l), 'TD-2', 2, 2000000, '00000000-0000-0000-0000-0000000000e1')$$, '22023', null, 'cannot book the same lead twice');
 select throws_ok($$select public.set_lead_status((select lead_id from _l), 'contacted')$$, '22023', null, 'booked leads stay booked');
 
-select is((select count(*)::int from public.commissions), 0, 'operators never read creator commissions');
+select is((select count(*)::int from public.commissions where creator_id = '00000000-0000-0000-0000-0000000000c1'), 0, 'operators never read another creator''s commissions');
 
 reset role;
 select is((select c.amount_paise from public.commissions c join public.conversions v on v.id = c.conversion_id where v.booking_ref = 'TD-1'), 200000::bigint, '10% booking commission from the DB rate');

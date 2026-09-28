@@ -30,8 +30,9 @@ Secrets live only in Vercel env vars (Preview vs Production separated) and `.env
 | 2 | Instagram reels, storefront editor, waitlist cron + admin override | ✅ done |
 | 3 | Operator affiliate settings, content kit, catalog filters | ✅ done |
 | 4 | Leads: enquiry + OTP (dev-simulated), Leads inbox, Mark booked, lead fees | ✅ done (real OTP sender pending) |
-| **5** | Operator performance | ⏭ next |
-| 6–8 | below | planned |
+| 5 | Operator performance, find creators, invites + custom commission | ✅ done |
+| **6** | Redirect bookings, integrations, billing | ⏭ next |
+| 7–8 | below | planned |
 
 ---
 

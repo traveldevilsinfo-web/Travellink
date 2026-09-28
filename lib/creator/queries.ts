@@ -37,11 +37,13 @@ export type CatalogTrip = {
   booking_mode: 'platform' | 'redirect' | 'enquiry'; lead_fee_paise: number
   organizations: { name: string } | null
   trip_commercials: { creator_commission_pct: number } | null
+  commission_overrides: { commission_pct: number; valid_from: string; valid_to: string | null }[]
   departures: { start_date: string; status: string }[]
 }
 
 const CATALOG = `id, slug, title, destination, state, start_city, creator_hooks, creator_brief, duration_days, duration_nights, from_price_paise, cover_image_path,
   booking_mode, lead_fee_paise, organizations(name), trip_commercials(creator_commission_pct),
+  commission_overrides(commission_pct, valid_from, valid_to),
   departures(start_date, status)`
 
 /** Published trips with this creator's commission. trip_commercials RLS only shows rates to active creators. */
@@ -54,7 +56,11 @@ export async function catalog(sb: Sb, opts: { slug?: string; limit?: number } = 
   return (data ?? []) as unknown as CatalogTrip[]
 }
 
-export const commissionPct = (t: CatalogTrip) => Number(t.trip_commercials?.creator_commission_pct ?? 0)
+/** The creator's rate: an accepted custom commission valid today (RLS returns only their own), else the trip's. */
+export const commissionPct = (t: CatalogTrip, today = todayIST()) => {
+  const o = t.commission_overrides.filter((x) => x.valid_from <= today && (!x.valid_to || x.valid_to >= today)).sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0]
+  return Number(o?.commission_pct ?? t.trip_commercials?.creator_commission_pct ?? 0)
+}
 /** What the creator earns per traveler at the "from" price, in paise. */
 export const earnPerTravelerPaise = (t: CatalogTrip) => Math.round((t.from_price_paise * commissionPct(t)) / 100)
 export const nextDeparture = (t: CatalogTrip) => t.departures.filter((d) => d.status === 'open').map((d) => d.start_date).sort()[0] ?? null
@@ -104,4 +110,10 @@ export async function commissions(sb: Sb, creatorId: string) {
 
 export function monthStartIST(): string {
   return `${todayIST().slice(0, 7)}-01`
+}
+
+export type InviteRow = { id: string; commission_pct: number | null; message: string | null; created_at: string; trips: { title: string; slug: string } | null; organizations: { name: string } | null }
+export async function pendingInvites(sb: Sb, creatorId: string) {
+  const { data } = await sb.from('collab_invites').select('id, commission_pct, message, created_at, trips(title, slug), organizations(name)').eq('creator_id', creatorId).eq('status', 'pending').order('created_at', { ascending: false })
+  return (data ?? []) as unknown as InviteRow[]
 }

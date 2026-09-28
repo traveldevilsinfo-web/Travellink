@@ -480,6 +480,74 @@ export type Database = {
           },
         ]
       }
+      collab_invites: {
+        Row: {
+          commission_pct: number | null
+          created_at: string
+          created_by: string | null
+          creator_id: string
+          id: string
+          message: string | null
+          org_id: string
+          responded_at: string | null
+          status: string
+          trip_id: string
+        }
+        Insert: {
+          commission_pct?: number | null
+          created_at?: string
+          created_by?: string | null
+          creator_id: string
+          id?: string
+          message?: string | null
+          org_id: string
+          responded_at?: string | null
+          status?: string
+          trip_id: string
+        }
+        Update: {
+          commission_pct?: number | null
+          created_at?: string
+          created_by?: string | null
+          creator_id?: string
+          id?: string
+          message?: string | null
+          org_id?: string
+          responded_at?: string | null
+          status?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collab_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collab_invites_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collab_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collab_invites_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_overrides: {
         Row: {
           commission_pct: number
@@ -1660,6 +1728,77 @@ export type Database = {
           },
         ]
       }
+      org_daily_stats: {
+        Row: {
+          bookings: number
+          clicks: number
+          commission_paise: number
+          creator_id: string
+          day: string
+          gmv_paise: number
+          leads: number
+          link_id: string | null
+          org_id: string
+          trip_id: string
+          unique_visitors: number
+        }
+        Insert: {
+          bookings?: number
+          clicks?: number
+          commission_paise?: number
+          creator_id: string
+          day: string
+          gmv_paise?: number
+          leads?: number
+          link_id?: string | null
+          org_id: string
+          trip_id: string
+          unique_visitors?: number
+        }
+        Update: {
+          bookings?: number
+          clicks?: number
+          commission_paise?: number
+          creator_id?: string
+          day?: string
+          gmv_paise?: number
+          leads?: number
+          link_id?: string | null
+          org_id?: string
+          trip_id?: string
+          unique_visitors?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_daily_stats_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_daily_stats_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "creator_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_daily_stats_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_daily_stats_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_members: {
         Row: {
           created_at: string
@@ -2827,6 +2966,20 @@ export type Database = {
       }
       my_creator_id: { Args: never; Returns: string }
       my_referral_code: { Args: never; Returns: string }
+      org_creator_links: {
+        Args: { p_creator: string; p_org: string }
+        Returns: {
+          code: string
+          created_at: string
+          label: string
+          link_id: string
+          reel_permalink: string
+          reel_thumbnail_url: string
+          reel_views: number
+          trip_id: string
+          trip_title: string
+        }[]
+      }
       post_journal: {
         Args: {
           p_booking: string
@@ -2840,12 +2993,17 @@ export type Database = {
       }
       promote_waitlist: { Args: never; Returns: number }
       refresh_creator_stats: { Args: { p_day?: string }; Returns: undefined }
+      refresh_org_stats: { Args: { p_day?: string }; Returns: undefined }
       release_booked_seats: {
         Args: { p_departure: string; p_qty: number }
         Returns: undefined
       }
       release_held_seats: {
         Args: { p_departure: string; p_qty: number }
+        Returns: undefined
+      }
+      respond_collab_invite: {
+        Args: { p_accept: boolean; p_invite: string }
         Returns: undefined
       }
       set_lead_status: {

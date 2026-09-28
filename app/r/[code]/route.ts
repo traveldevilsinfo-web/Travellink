@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/r/[code]'>) {
   if (track) {
     const referrer = req.headers.get('referer')
     after(() => logClick({
-      linkId: link.linkId, creatorId: link.creatorId, visitorId, ipHash: ip, isBot: bot, clickId,
+      linkId: link.linkId, creatorId: link.creatorId, tripId: link.tripId, visitorId, ipHash: ip, isBot: bot, clickId,
       uaHash: createHash('sha256').update(ua ?? '').digest('hex').slice(0, 32),
       referrer: referrer ? referrer.slice(0, 200) : null,
     }))
