@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/guards'
+import { revalidatePublicTrip } from '@/lib/public/revalidate'
 import { type ActionResult, AppError, toSafeError } from '@/lib/errors'
 import { ratelimit } from '@/lib/security/ratelimit'
 import { throwIfError } from '@/lib/supabase/errors'
@@ -30,6 +31,7 @@ export async function reviewOrg(input: unknown): Promise<ActionResult> {
     throwIfError(error, 'review org')
     // ponytail: Route linked-account creation on approval lands in M6 (outbox job).
     revalidatePath('/admin/approvals')
+    if (approve) revalidatePath('/', 'layout') // all of this operator's trips may now be public
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -57,6 +59,7 @@ export async function reviewTrip(input: unknown): Promise<ActionResult> {
       .eq('status', 'pending_review')
     throwIfError(error, 'review trip')
     revalidatePath('/admin/approvals')
+    await revalidatePublicTrip(supabase, d.id)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)

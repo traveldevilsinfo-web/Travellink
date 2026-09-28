@@ -6,6 +6,7 @@ import { requireTripAccess } from '@/lib/auth/guards'
 import { daysBetween, todayIST } from '@/lib/domain/dates'
 import { rupeesToPaise } from '@/lib/domain/money'
 import { type ActionResult, AppError, toSafeError } from '@/lib/errors'
+import { revalidatePublicTrip } from '@/lib/public/revalidate'
 import { throwIfError } from '@/lib/supabase/errors'
 import { DepartureSchema } from '@/lib/validation/trips'
 
@@ -64,6 +65,7 @@ export async function saveDeparture(input: unknown): Promise<ActionResult> {
 
     await syncFromPrice(supabase, tripId)
     revalidatePath(`/operator/trips/${tripId}/departures`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -78,6 +80,7 @@ export async function closeDeparture(input: unknown): Promise<ActionResult> {
     throwIfError(error, 'close departure')
     await syncFromPrice(supabase, tripId)
     revalidatePath(`/operator/trips/${tripId}/departures`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)

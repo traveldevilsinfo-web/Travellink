@@ -41,12 +41,14 @@ export default async function OnboardingPage() {
 
   const orgId = membership.organizations.id
   const canEdit = membership.role !== 'staff'
-  const [{ data: org }, { data: docs }, { data: priv }] = await Promise.all([
-    user.supabase.from('organizations').select('id, name, status, kyc_status, legal_name, gstin, gst_scheme, description, city, support_phone, support_email').eq('id', orgId).single(),
+  const [{ data: org }, { data: contacts }, { data: docs }, { data: priv }] = await Promise.all([
+    user.supabase.from('organizations').select('id, name, status, kyc_status, legal_name, gstin, gst_scheme, description, city').eq('id', orgId).single(),
+    // contacts are column-hidden from the public; members read them through this function
+    user.supabase.rpc('get_org_contacts', { p_org: orgId }).maybeSingle(),
     user.supabase.from('kyc_documents').select('doc_type, status, notes, created_at').eq('owner_type', 'org').eq('owner_id', orgId).order('created_at', { ascending: false }),
     user.supabase.from('organization_private').select('agreement_version, agreement_accepted_at').eq('org_id', orgId).maybeSingle(),
   ])
-  const o = org as Org
+  const o = { ...(org as Omit<Org, 'support_phone' | 'support_email'>), ...((contacts ?? {}) as Pick<Org, 'support_phone' | 'support_email'>) } as Org
   const docList = (docs ?? []) as { doc_type: string; status: string; notes: string | null }[]
   const latestDoc = (t: string) => docList.find((d) => d.doc_type === t)
 

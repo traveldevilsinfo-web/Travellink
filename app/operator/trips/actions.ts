@@ -10,6 +10,7 @@ import { readinessIssues, slugify } from '@/lib/domain/trips'
 import { type ActionResult, AppError, toSafeError } from '@/lib/errors'
 import { sanitizeImage } from '@/lib/media/image'
 import { tripReadiness } from '@/lib/operator/readiness'
+import { revalidatePublicTrip } from '@/lib/public/revalidate'
 import { ratelimit } from '@/lib/security/ratelimit'
 import { isUniqueViolation, throwIfError } from '@/lib/supabase/errors'
 import {
@@ -87,6 +88,7 @@ export async function updateTripDetails(input: unknown): Promise<ActionResult> {
     const { error } = await supabase.from('trips').update(detailsRow(data)).eq('id', tripId)
     throwIfError(error, 'update trip')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -107,6 +109,7 @@ export async function saveItinerary(input: unknown): Promise<ActionResult> {
     const { error: delErr } = await supabase.from('trip_itinerary_days').delete().eq('trip_id', tripId).gt('day_number', days.length)
     throwIfError(delErr, 'trim itinerary')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -136,6 +139,7 @@ export async function uploadTripMedia(form: FormData): Promise<ActionResult> {
     // first photo becomes the cover
     await supabase.from('trips').update({ cover_image_path: path }).eq('id', tripId).is('cover_image_path', null)
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -151,6 +155,7 @@ export async function setCover(input: unknown): Promise<ActionResult> {
     const { error } = await supabase.from('trips').update({ cover_image_path: (m as { storage_path: string }).storage_path }).eq('id', tripId)
     throwIfError(error, 'set cover')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -169,6 +174,7 @@ export async function deleteTripMedia(input: unknown): Promise<ActionResult> {
     await supabase.from('trips').update({ cover_image_path: (next as { storage_path: string } | null)?.storage_path ?? null })
       .eq('id', tripId).eq('cover_image_path', path)
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -185,6 +191,7 @@ export async function addPickup(input: unknown): Promise<ActionResult> {
     })
     throwIfError(error, 'add pickup')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -198,6 +205,7 @@ export async function deletePickup(input: unknown): Promise<ActionResult> {
     const { error } = await supabase.from('trip_pickup_points').delete().eq('id', pickupId).eq('trip_id', tripId)
     throwIfError(error, 'delete pickup')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -217,6 +225,7 @@ export async function saveCommission(input: unknown): Promise<ActionResult> {
       .upsert({ trip_id: tripId, creator_commission_pct: creatorCommissionPct, updated_at: new Date().toISOString() }, { onConflict: 'trip_id' })
     throwIfError(error, 'save commission')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     return { ok: true }
   } catch (e) {
     return toSafeError(e)
@@ -236,6 +245,7 @@ export async function changeTripStatus(input: unknown): Promise<ActionResult> {
     const { error } = await supabase.from('trips').update({ status: to }).eq('id', tripId)
     throwIfError(error, 'change status')
     revalidatePath(`/operator/trips/${tripId}`)
+    await revalidatePublicTrip(supabase, tripId)
     revalidatePath('/operator/trips')
     return { ok: true }
   } catch (e) {
