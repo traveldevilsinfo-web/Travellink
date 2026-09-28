@@ -21,3 +21,11 @@ describe('nextPayoutDate', () => {
     ['2026-12-20', '2027-01-05'],
   ])('%s → %s', (today, next) => expect(nextPayoutDate(today)).toBe(next))
 })
+
+describe('describeCommission dates', () => {
+  it('shows the IST calendar date of a timestamp', () => {
+    // 29 Oct 00:00 IST is 28 Oct 18:30 UTC
+    const d = describeCommission({ status: 'pending', confirmable_at: '2026-10-28T18:30:00Z', payable_at: '2026-10-28T18:30:00Z', reversed_reason: null })
+    expect(d.next).toBe('Confirms on 29 Oct 2026')
+  })
+})

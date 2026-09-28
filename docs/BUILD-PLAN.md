@@ -29,8 +29,9 @@ Secrets live only in Vercel env vars (Preview vs Production separated) and `.env
 | 1 | Link tracking: /r redirect, signed cookie, trip landing + storefront restyle | ✅ done |
 | 2 | Instagram reels, storefront editor, waitlist cron + admin override | ✅ done |
 | 3 | Operator affiliate settings, content kit, catalog filters | ✅ done |
-| **4** | Leads (enquire + OTP, inbox, Mark booked) | ⏭ next |
-| 5–8 | below | planned |
+| 4 | Leads: enquiry + OTP (dev-simulated), Leads inbox, Mark booked, lead fees | ✅ done (real OTP sender pending) |
+| **5** | Operator performance | ⏭ next |
+| 6–8 | below | planned |
 
 ---
 

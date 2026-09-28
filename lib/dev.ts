@@ -12,3 +12,6 @@ export const DEV_ACCOUNTS = {
   traveler: 'traveler@triplink.test',
   admin: 'admin@triplink.test',
 } as const
+
+/** Dev stand-in for WhatsApp/SMS OTP delivery: the code is shown on screen. Same gate as dev login. */
+export const otpSimulationAllowed = devLoginAllowed

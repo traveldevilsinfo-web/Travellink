@@ -39,7 +39,7 @@ export default async function Earnings({ searchParams }: PageProps<'/creator/ear
       </nav>
       {rows.length === 0 ? (
         <EmptyState icon={<Wallet />} title={current === 'all' ? 'No earnings yet' : 'Nothing here yet'}>
-          <p className="max-w-[40ch] text-sm text-ink-2">Commissions appear here as soon as a follower books with your link.</p>
+          <p className="max-w-[40ch] text-sm text-ink-2">Commissions appear here as soon as a follower books or sends a verified enquiry through your link.</p>
         </EmptyState>
       ) : (
         <ul className="overflow-hidden rounded-2xl border bg-card">
@@ -47,7 +47,7 @@ export default async function Earnings({ searchParams }: PageProps<'/creator/ear
             const d = describeCommission(c)
             return (
               <li key={c.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 border-t px-4 py-3.5 first:border-t-0 md:grid-cols-[minmax(0,2fr)_1fr_1.4fr_110px] md:items-center">
-                <div className="min-w-0"><b>Booking · {c.trip_title}</b><div className="text-sm text-ink-2">{c.travelers_count} traveler{c.travelers_count > 1 ? 's' : ''} · {formatDateIST(c.departure_start)}</div></div>
+                <div className="min-w-0"><b>{c.kind === 'lead' ? 'Lead fee' : 'Booking'} · {c.trip_title}</b><div className="text-sm text-ink-2">{c.travelers_count} traveler{c.travelers_count > 1 ? 's' : ''} · {c.kind === 'lead' ? `verified enquiry on ${formatDateIST(todayIST(new Date(c.created_at)))}` : c.departure_start ? formatDateIST(c.departure_start) : ''}</div></div>
                 <div className="row-span-2 text-right md:row-span-1 md:text-left"><Badge variant={d.tone}>{d.label}</Badge></div>
                 <div className={`text-sm ${d.tone === 'danger' ? 'text-danger' : 'text-brand-700 md:text-ink-2'}`}>{d.next}</div>
                 <b className={`num md:text-right ${c.status === 'reversed' ? 'text-ink-3 line-through' : ''}`}>{formatINR(c.amount_paise)}</b>

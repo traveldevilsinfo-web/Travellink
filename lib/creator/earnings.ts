@@ -1,10 +1,10 @@
-import { formatDateIST } from '@/lib/domain/dates'
+import { formatDateIST, todayIST } from '@/lib/domain/dates'
 
 export type CommissionStatus = 'pending' | 'confirmed' | 'payable' | 'in_payout' | 'paid' | 'reversed' | 'on_hold'
 
 /** Status label, badge tone, and the "what happens next" line (ARCHITECTURE §6.5, §20.4). Pure. */
 export function describeCommission(c: { status: CommissionStatus; confirmable_at: string; payable_at: string; reversed_reason: string | null }) {
-  const d = (iso: string) => formatDateIST(iso.slice(0, 10))
+  const d = (iso: string) => formatDateIST(todayIST(new Date(iso))) // timestamps → IST calendar date
   switch (c.status) {
     case 'pending': return { label: 'Pending', tone: 'warning', next: `Confirms on ${d(c.confirmable_at)}` } as const
     case 'confirmed': return { label: 'Confirmed', tone: 'teal', next: `Payable after ${d(c.payable_at)}` } as const

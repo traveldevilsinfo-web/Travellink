@@ -89,14 +89,14 @@ export async function linksWithStats(sb: Sb, creatorId: string, sinceDay?: strin
 }
 
 export type CommissionRow = {
-  id: string; trip_title: string; departure_start: string; travelers_count: number; amount_paise: number
+  id: string; kind: 'booking' | 'lead'; trip_title: string; departure_start: string | null; travelers_count: number; amount_paise: number
   status: 'pending' | 'confirmed' | 'payable' | 'in_payout' | 'paid' | 'reversed' | 'on_hold'
   confirmable_at: string; payable_at: string; reversed_reason: string | null; created_at: string
 }
 export async function commissions(sb: Sb, creatorId: string) {
   const { data } = await sb
     .from('commissions')
-    .select('id, trip_title, departure_start, travelers_count, amount_paise, status, confirmable_at, payable_at, reversed_reason, created_at')
+    .select('id, kind, trip_title, departure_start, travelers_count, amount_paise, status, confirmable_at, payable_at, reversed_reason, created_at')
     .eq('creator_id', creatorId)
     .order('created_at', { ascending: false })
   return (data ?? []) as CommissionRow[]

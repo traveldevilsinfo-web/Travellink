@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Lock, MessageCircle, ShieldCheck } from 'lucide-react'
 import { CreatorRibbon } from '@/components/trip/creator-ribbon'
+import { EnquireDialog } from '@/components/trip/enquire-dialog'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Markdown } from '@/components/trip/markdown'
@@ -52,7 +53,11 @@ export default async function TripPage({ params }: PageProps<'/trips/[slug]'>) {
 
   const wa = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER
   const waHref = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(`Hi! I'm interested in ${trip.title} (ref: ${trip.slug})`)}` : null
-  // Booking-mode CTA (ARCHITECTURE §20.3). Checkout (M8), enquiry form (Phase 4) and redirect (Phase 6) plug in here.
+  const enquire = {
+    tripId: trip.id, tripTitle: trip.title, operator: trip.organizations.name,
+    departures: trip.departures.filter((d) => d.status === 'open').map((d) => ({ id: d.id, label: formatDateIST(d.start_date) })),
+  }
+  // Booking-mode CTA (ARCHITECTURE §20.3). Enquiry mode opens the OTP enquiry; checkout (M8) and redirect (Phase 6) plug in here.
   const cta = {
     platform: { label: 'Check dates', note: 'Reserve with a deposit. Pay the rest before the trip.', trust: 'Paid securely on TripLink with refund protection.' },
     redirect: { label: `Book with ${trip.organizations.name}`, note: `Booked directly with ${trip.organizations.name}.`, trust: 'Your creator is credited when you book.' },
@@ -178,7 +183,9 @@ export default async function TripPage({ params }: PageProps<'/trips/[slug]'>) {
         <aside className="hidden flex-col gap-3.5 self-start rounded-[18px] border bg-card p-5.5 shadow-[0_10px_30px_-12px_rgba(16,26,24,.16)] lg:sticky lg:top-20 lg:flex">
           <div><span className="text-sm text-ink-2">From</span><div className="flex items-baseline gap-2"><span className="num text-[30px] font-extrabold">{formatINR(trip.from_price_paise)}</span><span className="text-sm text-ink-2">per person + GST</span></div></div>
           <p className="text-sm text-ink-2">{cta.note}</p>
-          <a href="#dates" className={buttonVariants({ size: 'lg', className: 'w-full' })}>{cta.label}</a>
+          {trip.booking_mode === 'enquiry'
+            ? <EnquireDialog {...enquire} label={cta.label} className="w-full" />
+            : <><a href="#dates" className={buttonVariants({ size: 'lg', className: 'w-full' })}>{cta.label}</a><EnquireDialog {...enquire} label="Ask the operator" variant="outline" className="w-full" /></>}
           {waHref && <a href={waHref} rel="noopener" className={buttonVariants({ variant: 'outline', className: 'w-full text-success' })}><MessageCircle />Ask on WhatsApp</a>}
           <p className="flex items-center gap-1.5 text-xs text-ink-3"><Lock className="size-3.5" aria-hidden />{cta.trust}</p>
         </aside>
@@ -187,7 +194,7 @@ export default async function TripPage({ params }: PageProps<'/trips/[slug]'>) {
       <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center gap-2.5 border-t bg-white/97 px-4 py-3 md:-mx-6 md:px-6 lg:hidden">
         <div className="min-w-0 flex-1"><b className="num">{formatINR(trip.from_price_paise)}</b><div className="text-xs text-ink-2">per person + GST</div></div>
         {waHref && <a href={waHref} rel="noopener" aria-label="Ask on WhatsApp" className={buttonVariants({ variant: 'outline', size: 'icon', className: 'text-success' })}><MessageCircle /></a>}
-        <a href="#dates" className={buttonVariants()}>{cta.label}</a>
+        {trip.booking_mode === 'enquiry' ? <EnquireDialog {...enquire} label={cta.label} className="h-11" /> : <a href="#dates" className={buttonVariants()}>{cta.label}</a>}
       </div>
     </main>
   )

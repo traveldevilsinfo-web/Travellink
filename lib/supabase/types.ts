@@ -529,19 +529,23 @@ export type Database = {
         Row: {
           amount_paise: number
           base_paise: number
-          booking_id: string
-          booking_ref: string
+          booking_id: string | null
+          booking_ref: string | null
           confirmable_at: string
           confirmed_at: string | null
+          conversion_id: string | null
           created_at: string
           creator_id: string
-          departure_start: string
+          departure_start: string | null
           hold_reason: string | null
           id: string
+          kind: Database["public"]["Enums"]["commission_kind"]
+          lead_id: string | null
           payable_at: string
           payout_id: string | null
           pct: number
           reversed_reason: string | null
+          source: string
           status: Database["public"]["Enums"]["commission_status"]
           travelers_count: number
           trip_title: string
@@ -550,19 +554,23 @@ export type Database = {
         Insert: {
           amount_paise: number
           base_paise: number
-          booking_id: string
-          booking_ref: string
+          booking_id?: string | null
+          booking_ref?: string | null
           confirmable_at: string
           confirmed_at?: string | null
+          conversion_id?: string | null
           created_at?: string
           creator_id: string
-          departure_start: string
+          departure_start?: string | null
           hold_reason?: string | null
           id?: string
+          kind?: Database["public"]["Enums"]["commission_kind"]
+          lead_id?: string | null
           payable_at: string
           payout_id?: string | null
           pct: number
           reversed_reason?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["commission_status"]
           travelers_count: number
           trip_title: string
@@ -571,19 +579,23 @@ export type Database = {
         Update: {
           amount_paise?: number
           base_paise?: number
-          booking_id?: string
-          booking_ref?: string
+          booking_id?: string | null
+          booking_ref?: string | null
           confirmable_at?: string
           confirmed_at?: string | null
+          conversion_id?: string | null
           created_at?: string
           creator_id?: string
-          departure_start?: string
+          departure_start?: string | null
           hold_reason?: string | null
           id?: string
+          kind?: Database["public"]["Enums"]["commission_kind"]
+          lead_id?: string | null
           payable_at?: string
           payout_id?: string | null
           pct?: number
           reversed_reason?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["commission_status"]
           travelers_count?: number
           trip_title?: string
@@ -598,10 +610,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "commissions_conversion_id_fkey"
+            columns: ["conversion_id"]
+            isOneToOne: true
+            referencedRelation: "conversions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "commissions_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {
@@ -644,6 +670,116 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversions: {
+        Row: {
+          amount_paise: number
+          booking_ref: string
+          click_id: string | null
+          created_at: string
+          creator_id: string | null
+          departure_id: string | null
+          id: string
+          lead_id: string | null
+          link_id: string | null
+          org_id: string
+          reported_by: string | null
+          source: Database["public"]["Enums"]["conversion_source"]
+          status: Database["public"]["Enums"]["conversion_status"]
+          travel_date: string
+          travelers: number
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paise: number
+          booking_ref: string
+          click_id?: string | null
+          created_at?: string
+          creator_id?: string | null
+          departure_id?: string | null
+          id?: string
+          lead_id?: string | null
+          link_id?: string | null
+          org_id: string
+          reported_by?: string | null
+          source: Database["public"]["Enums"]["conversion_source"]
+          status?: Database["public"]["Enums"]["conversion_status"]
+          travel_date: string
+          travelers: number
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paise?: number
+          booking_ref?: string
+          click_id?: string | null
+          created_at?: string
+          creator_id?: string | null
+          departure_id?: string | null
+          id?: string
+          lead_id?: string | null
+          link_id?: string | null
+          org_id?: string
+          reported_by?: string | null
+          source?: Database["public"]["Enums"]["conversion_source"]
+          status?: Database["public"]["Enums"]["conversion_status"]
+          travel_date?: string
+          travelers?: number
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversions_departure_id_fkey"
+            columns: ["departure_id"]
+            isOneToOne: false
+            referencedRelation: "departures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversions_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "creator_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversions_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversions_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
             referencedColumns: ["id"]
           },
         ]
@@ -1343,6 +1479,7 @@ export type Database = {
           qualified_at: string | null
           source: Database["public"]["Enums"]["attribution_source"]
           status: Database["public"]["Enums"]["lead_status"]
+          travelers: number | null
           trip_id: string | null
           updated_at: string
           visitor_id: string | null
@@ -1365,6 +1502,7 @@ export type Database = {
           qualified_at?: string | null
           source: Database["public"]["Enums"]["attribution_source"]
           status?: Database["public"]["Enums"]["lead_status"]
+          travelers?: number | null
           trip_id?: string | null
           updated_at?: string
           visitor_id?: string | null
@@ -1387,6 +1525,7 @@ export type Database = {
           qualified_at?: string | null
           source?: Database["public"]["Enums"]["attribution_source"]
           status?: Database["public"]["Enums"]["lead_status"]
+          travelers?: number | null
           trip_id?: string | null
           updated_at?: string
           visitor_id?: string | null
@@ -2623,7 +2762,26 @@ export type Database = {
         Args: { p_org: string; p_version: string }
         Returns: undefined
       }
+      advance_affiliate_lifecycle: { Args: never; Returns: undefined }
       advance_lifecycle: { Args: never; Returns: undefined }
+      capture_lead: {
+        Args: {
+          p_creator: string
+          p_departure: string
+          p_link: string
+          p_message: string
+          p_name: string
+          p_phone: string
+          p_travelers: number
+          p_trip: string
+          p_visitor: string
+        }
+        Returns: {
+          duplicate: boolean
+          lead_fee_paise: number
+          lead_id: string
+        }[]
+      }
       confirm_seats: {
         Args: { p_departure: string; p_qty: number }
         Returns: undefined
@@ -2657,6 +2815,16 @@ export type Database = {
       is_end_user: { Args: never; Returns: boolean }
       is_org_manager: { Args: { p_org: string }; Returns: boolean }
       is_org_member: { Args: { p_org: string }; Returns: boolean }
+      mark_lead_booked: {
+        Args: {
+          p_amount_paise: number
+          p_booking_ref: string
+          p_departure: string
+          p_lead: string
+          p_travelers: number
+        }
+        Returns: string
+      }
       my_creator_id: { Args: never; Returns: string }
       my_referral_code: { Args: never; Returns: string }
       post_journal: {
@@ -2678,6 +2846,13 @@ export type Database = {
       }
       release_held_seats: {
         Args: { p_departure: string; p_qty: number }
+        Returns: undefined
+      }
+      set_lead_status: {
+        Args: {
+          p_lead: string
+          p_status: Database["public"]["Enums"]["lead_status"]
+        }
         Returns: undefined
       }
       set_storefront_list: {
@@ -2717,6 +2892,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "expired"
+      commission_kind: "booking" | "lead"
       commission_status:
         | "pending"
         | "confirmed"
@@ -2725,6 +2901,8 @@ export type Database = {
         | "paid"
         | "reversed"
         | "on_hold"
+      conversion_source: "dashboard" | "postback" | "pixel"
+      conversion_status: "reported" | "confirmed" | "cancelled" | "disputed"
       creator_tier: "standard" | "pro" | "host"
       departure_status:
         | "open"
@@ -2947,6 +3125,7 @@ export const Constants = {
         "cancelled",
         "expired",
       ],
+      commission_kind: ["booking", "lead"],
       commission_status: [
         "pending",
         "confirmed",
@@ -2956,6 +3135,8 @@ export const Constants = {
         "reversed",
         "on_hold",
       ],
+      conversion_source: ["dashboard", "postback", "pixel"],
+      conversion_status: ["reported", "confirmed", "cancelled", "disputed"],
       creator_tier: ["standard", "pro", "host"],
       departure_status: [
         "open",
