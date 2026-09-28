@@ -1,0 +1,61 @@
+import { createEnv } from '@t3-oss/env-nextjs'
+import { z } from 'zod'
+
+// Mirrors .env.example. Only Supabase is required in M0; each milestone makes its vars required.
+const opt = z.string().min(1).optional()
+
+export const env = createEnv({
+  server: {
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    SUPABASE_DB_URL: opt,
+    RAZORPAY_KEY_SECRET: opt,
+    RAZORPAY_WEBHOOK_SECRET: opt,
+    RAZORPAYX_KEY_ID: opt,
+    RAZORPAYX_KEY_SECRET: opt,
+    RAZORPAYX_ACCOUNT_NUMBER: opt,
+    RAZORPAYX_WEBHOOK_SECRET: opt,
+    WHATSAPP_API_BASE: opt,
+    WHATSAPP_ACCESS_TOKEN: opt,
+    WHATSAPP_PHONE_NUMBER_ID: opt,
+    WHATSAPP_APP_SECRET: opt,
+    WHATSAPP_VERIFY_TOKEN: opt,
+    MSG91_AUTH_KEY: opt,
+    MSG91_OTP_TEMPLATE_ID: opt,
+    SUPABASE_SMS_HOOK_SECRET: opt,
+    RESEND_API_KEY: opt,
+    EMAIL_FROM: opt,
+    UPSTASH_REDIS_REST_URL: opt,
+    UPSTASH_REDIS_REST_TOKEN: opt,
+    TURNSTILE_SECRET_KEY: opt,
+    REF_COOKIE_SECRET: z.string().min(32).optional(),
+    PII_ENCRYPTION_KEY: opt,
+    IP_HASH_SALT: opt,
+    CRON_SECRET: opt,
+    SENTRY_AUTH_TOKEN: opt,
+  },
+  // AGENTS.md rule 10: only these may be public.
+  client: {
+    NEXT_PUBLIC_SITE_URL: z.url().optional(),
+    NEXT_PUBLIC_SUPABASE_URL: z.url(),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: opt,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: opt,
+    NEXT_PUBLIC_POSTHOG_KEY: opt,
+    NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),
+    NEXT_PUBLIC_SENTRY_DSN: opt,
+    NEXT_PUBLIC_WHATSAPP_NUMBER: opt,
+  },
+  experimental__runtimeEnv: {
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
+  },
+  emptyStringAsUndefined: true,
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+})
