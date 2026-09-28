@@ -69,7 +69,7 @@ export async function updateOrgDetails(input: unknown): Promise<ActionResult> {
 
 export async function uploadKycDoc(form: FormData): Promise<ActionResult> {
   try {
-    const orgId = z.uuid().parse(form.get('orgId'))
+    const orgId = z.guid().parse(form.get('orgId'))
     const docType = KycDocTypeSchema.parse(form.get('docType'))
     const file = form.get('file')
     const { supabase, id: userId } = await requireOrgRole(orgId, ['owner', 'manager'], {}, '/operator/onboarding')

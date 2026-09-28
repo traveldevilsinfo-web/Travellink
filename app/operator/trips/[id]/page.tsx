@@ -13,7 +13,7 @@ import { STATUS_LABEL } from '@/lib/operator/status'
 import { publicMediaUrl } from '@/lib/storage'
 import { CommissionForm, ItineraryForm, MediaManager, PickupsManager, StatusActions, TripDetailsForm } from '../trip-forms'
 
-export const metadata: Metadata = { title: 'Edit trip · TripLink operator', robots: { index: false } }
+export const metadata: Metadata = { title: 'Edit trip', robots: { index: false } }
 
 type Trip = {
   id: string; org_id: string; title: string; summary: string | null; description_md: string | null; trip_type: 'group' | 'experiential' | 'package' | 'creator_hosted'
@@ -24,7 +24,7 @@ type Trip = {
 }
 
 export default async function EditTripPage({ params }: PageProps<'/operator/trips/[id]'>) {
-  const id = z.uuid().safeParse((await params).id)
+  const id = z.guid().safeParse((await params).id)
   if (!id.success) notFound()
   const { supabase, orgRole, orgId } = await requireTripAccess(id.data)
 
@@ -43,7 +43,7 @@ export default async function EditTripPage({ params }: PageProps<'/operator/trip
   const floor = Number((setting.data as { min_creator_pct?: number } | null)?.min_creator_pct ?? 8)
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <header className="flex flex-col gap-3">
         <Link href="/operator/trips" className="text-sm text-muted-foreground">← All trips</Link>
         <div className="flex items-start justify-between gap-3">
@@ -116,6 +116,6 @@ export default async function EditTripPage({ params }: PageProps<'/operator/trip
           />
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   )
 }

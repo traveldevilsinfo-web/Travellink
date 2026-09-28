@@ -9,7 +9,7 @@ import { addDays, formatDateIST, todayIST } from '@/lib/domain/dates'
 import { formatINR } from '@/lib/domain/money'
 import { CloseDepartureButton, DepartureForm } from './departure-form'
 
-export const metadata: Metadata = { title: 'Departures · TripLink operator', robots: { index: false } }
+export const metadata: Metadata = { title: 'Departures', robots: { index: false } }
 
 type Dep = {
   id: string; start_date: string; end_date: string; capacity: number; seats_booked: number; seats_held: number
@@ -18,7 +18,7 @@ type Dep = {
 }
 
 export default async function DeparturesPage({ params }: PageProps<'/operator/trips/[id]/departures'>) {
-  const id = z.uuid().safeParse((await params).id)
+  const id = z.guid().safeParse((await params).id)
   if (!id.success) notFound()
   const { supabase, orgRole } = await requireTripAccess(id.data)
   const [{ data: trip }, { data }] = await Promise.all([
@@ -35,7 +35,7 @@ export default async function DeparturesPage({ params }: PageProps<'/operator/tr
   const firstStart = addDays(todayIST(), 14)
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <header>
         <Link href={`/operator/trips/${id.data}`} className="text-sm text-muted-foreground">← {t.title}</Link>
         <h1 className="mt-2 text-xl font-semibold">Departures & prices</h1>
@@ -97,6 +97,6 @@ export default async function DeparturesPage({ params }: PageProps<'/operator/tr
           />
         </CardContent>
       </Card>
-    </main>
+    </div>
   )
 }

@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { safeNext } from '@/lib/validation/auth'
+import { devLoginAllowed } from '@/lib/dev'
+import { DevLogin } from './dev-login'
 import { LoginForm } from './login-form'
 
-export const metadata: Metadata = { title: 'Sign in · TripLink', robots: { index: false } }
+export const metadata: Metadata = { title: 'Sign in', robots: { index: false } }
 
 export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const sp = await searchParams
@@ -20,6 +22,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
             <p role="alert" className="mb-4 text-sm text-destructive">That sign-in link is invalid or expired. Try again.</p>
           )}
           <LoginForm next={next} turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+          {devLoginAllowed() && <DevLogin />}
         </CardContent>
       </Card>
     </main>

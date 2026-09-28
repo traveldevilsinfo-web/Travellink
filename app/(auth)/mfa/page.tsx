@@ -5,7 +5,7 @@ import { requireUser } from '@/lib/auth/guards'
 import { safeNext } from '@/lib/validation/auth'
 import { MfaForm } from './mfa-form'
 
-export const metadata: Metadata = { title: 'Two-factor verification · TripLink', robots: { index: false } }
+export const metadata: Metadata = { title: 'Two-factor verification', robots: { index: false } }
 
 export default async function MfaPage({ searchParams }: PageProps<'/mfa'>) {
   const next = safeNext((await searchParams).next, '/')

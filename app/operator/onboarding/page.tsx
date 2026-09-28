@@ -6,7 +6,7 @@ import { myOrgs, requireUser } from '@/lib/auth/guards'
 import { KYC_DOC_TYPES, REQUIRED_ORG_KYC } from '@/lib/validation/operator'
 import { AgreementForm, KycUploadForm, OrgCreateForm, OrgDetailsForm } from './onboarding-forms'
 
-export const metadata: Metadata = { title: 'Operator onboarding · TripLink', robots: { index: false } }
+export const metadata: Metadata = { title: 'Operator onboarding', robots: { index: false } }
 
 const DOC_LABELS: Record<(typeof KYC_DOC_TYPES)[number], string> = {
   pan: 'Company PAN card',
@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
 
   if (!membership) {
     return (
-      <main className="mx-auto max-w-md px-4 py-8">
+      <div className="max-w-md">
         <Card>
           <CardHeader>
             <CardTitle>List your trips on TripLink</CardTitle>
@@ -35,7 +35,7 @@ export default async function OnboardingPage() {
           </CardHeader>
           <CardContent><OrgCreateForm /></CardContent>
         </Card>
-      </main>
+      </div>
     )
   }
 
@@ -57,7 +57,7 @@ export default async function OnboardingPage() {
   const agreementDone = !!priv?.agreement_accepted_at
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold">{o.name}</h1>
         <StatusBanner status={o.status} kycStatus={o.kyc_status} allDone={detailsDone && kycDone && agreementDone} />
@@ -114,7 +114,7 @@ export default async function OnboardingPage() {
       </Card>
 
       {o.status === 'active' && <Link href="/operator/trips" className="text-sm underline">Go to your trips →</Link>}
-    </main>
+    </div>
   )
 }
 

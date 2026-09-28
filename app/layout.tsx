@@ -1,17 +1,18 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
-const sans = Geist({ variable: '--font-sans', subsets: ['latin'], display: 'swap' })
+const sans = Plus_Jakarta_Sans({ variable: '--font-sans', subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
-  title: { default: 'TripLink — group trips curated by creators you follow', template: '%s · TripLink' },
-  description: 'Book verified group trips, weekend getaways and creator-hosted experiences across India. Secure payments, clear refund policies.',
+  title: { default: 'TripLink — creators share trips, operators get bookings', template: '%s · TripLink' },
+  description:
+    'The travel affiliate platform for India. Operators list trips, Instagram creators share affiliate links, and every click, lead and booking is tracked.',
   openGraph: { siteName: 'TripLink', locale: 'en_IN', type: 'website' },
 }
 
-export const viewport: Viewport = { themeColor: '#ffffff', width: 'device-width', initialScale: 1 }
+export const viewport: Viewport = { themeColor: '#FF5A1F', width: 'device-width', initialScale: 1 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (

@@ -6,7 +6,7 @@ import { formatINR } from '@/lib/domain/money'
 import { REQUIRED_ORG_KYC } from '@/lib/validation/operator'
 import { ReviewButtons } from './review-buttons'
 
-export const metadata: Metadata = { title: 'Approvals · TripLink admin', robots: { index: false } }
+export const metadata: Metadata = { title: 'Approvals', robots: { index: false } }
 export const dynamic = 'force-dynamic'
 
 type Org = { id: string; name: string; legal_name: string | null; gstin: string | null; gst_scheme: string; city: string | null; kyc_status: string; created_at: string }

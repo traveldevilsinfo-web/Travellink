@@ -418,6 +418,7 @@ export type Database = {
       }
       clicks: {
         Row: {
+          click_id: string | null
           created_at: string
           creator_id: string
           id: number
@@ -430,6 +431,7 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          click_id?: string | null
           created_at?: string
           creator_id: string
           id?: never
@@ -442,6 +444,7 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          click_id?: string | null
           created_at?: string
           creator_id?: string
           id?: never
@@ -872,6 +875,94 @@ export type Database = {
           },
         ]
       }
+      creator_social_accounts: {
+        Row: {
+          account_type: string | null
+          created_at: string
+          creator_id: string
+          followers_count: number
+          last_synced_at: string
+          media_count: number | null
+          profile_picture_url: string | null
+          provider: string
+          provider_user_id: string
+          token_encrypted: string | null
+          token_expires_at: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          account_type?: string | null
+          created_at?: string
+          creator_id: string
+          followers_count: number
+          last_synced_at?: string
+          media_count?: number | null
+          profile_picture_url?: string | null
+          provider?: string
+          provider_user_id: string
+          token_encrypted?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          account_type?: string | null
+          created_at?: string
+          creator_id?: string
+          followers_count?: number
+          last_synced_at?: string
+          media_count?: number | null
+          profile_picture_url?: string | null
+          provider?: string
+          provider_user_id?: string
+          token_encrypted?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_social_accounts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_social_snapshots: {
+        Row: {
+          avg_reel_views: number | null
+          creator_id: string
+          day: string
+          engagement_rate: number | null
+          followers_count: number
+        }
+        Insert: {
+          avg_reel_views?: number | null
+          creator_id: string
+          day: string
+          engagement_rate?: number | null
+          followers_count: number
+        }
+        Update: {
+          avg_reel_views?: number | null
+          creator_id?: string
+          day?: string
+          engagement_rate?: number | null
+          followers_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_social_snapshots_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creators: {
         Row: {
           avatar_url: string | null
@@ -1175,11 +1266,15 @@ export type Database = {
           creator_id: string | null
           departure_id: string | null
           email: string | null
+          fee_status: string
           id: string
+          lead_fee_paise: number
           link_id: string | null
           message: string | null
           name: string | null
           phone: string
+          qualification_method: string | null
+          qualified_at: string | null
           source: Database["public"]["Enums"]["attribution_source"]
           status: Database["public"]["Enums"]["lead_status"]
           trip_id: string | null
@@ -1193,11 +1288,15 @@ export type Database = {
           creator_id?: string | null
           departure_id?: string | null
           email?: string | null
+          fee_status?: string
           id?: string
+          lead_fee_paise?: number
           link_id?: string | null
           message?: string | null
           name?: string | null
           phone: string
+          qualification_method?: string | null
+          qualified_at?: string | null
           source: Database["public"]["Enums"]["attribution_source"]
           status?: Database["public"]["Enums"]["lead_status"]
           trip_id?: string | null
@@ -1211,11 +1310,15 @@ export type Database = {
           creator_id?: string | null
           departure_id?: string | null
           email?: string | null
+          fee_status?: string
           id?: string
+          lead_fee_paise?: number
           link_id?: string | null
           message?: string | null
           name?: string | null
           phone?: string
+          qualification_method?: string | null
+          qualified_at?: string | null
           source?: Database["public"]["Enums"]["attribution_source"]
           status?: Database["public"]["Enums"]["lead_status"]
           trip_id?: string | null
@@ -2158,6 +2261,7 @@ export type Database = {
       }
       trips: {
         Row: {
+          booking_mode: Database["public"]["Enums"]["booking_mode"]
           cancellation_policy_id: string
           country: string
           cover_image_path: string | null
@@ -2173,10 +2277,13 @@ export type Database = {
           hosted_by_creator_id: string | null
           id: string
           inclusions: string[]
+          lead_fee_monthly_cap: number | null
+          lead_fee_paise: number
           max_group_size: number | null
           min_age: number | null
           org_id: string
           published_at: string | null
+          redirect_url: string | null
           review_notes: string | null
           search: unknown
           slug: string
@@ -2191,6 +2298,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          booking_mode?: Database["public"]["Enums"]["booking_mode"]
           cancellation_policy_id: string
           country?: string
           cover_image_path?: string | null
@@ -2206,10 +2314,13 @@ export type Database = {
           hosted_by_creator_id?: string | null
           id?: string
           inclusions?: string[]
+          lead_fee_monthly_cap?: number | null
+          lead_fee_paise?: number
           max_group_size?: number | null
           min_age?: number | null
           org_id: string
           published_at?: string | null
+          redirect_url?: string | null
           review_notes?: string | null
           search?: unknown
           slug: string
@@ -2224,6 +2335,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          booking_mode?: Database["public"]["Enums"]["booking_mode"]
           cancellation_policy_id?: string
           country?: string
           cover_image_path?: string | null
@@ -2239,10 +2351,13 @@ export type Database = {
           hosted_by_creator_id?: string | null
           id?: string
           inclusions?: string[]
+          lead_fee_monthly_cap?: number | null
+          lead_fee_paise?: number
           max_group_size?: number | null
           min_age?: number | null
           org_id?: string
           published_at?: string | null
+          redirect_url?: string | null
           review_notes?: string | null
           search?: unknown
           slug?: string
@@ -2416,7 +2531,7 @@ export type Database = {
       trip_org: { Args: { p_trip: string }; Returns: string }
     }
     Enums: {
-      account_status: "pending" | "active" | "suspended"
+      account_status: "pending" | "active" | "suspended" | "waitlist"
       admin_role: "super_admin" | "ops" | "finance" | "support"
       attribution_source:
         | "link"
@@ -2425,6 +2540,7 @@ export type Database = {
         | "whatsapp"
         | "phone_match"
         | "manual"
+      booking_mode: "platform" | "redirect" | "enquiry"
       booking_status:
         | "held"
         | "confirmed"
@@ -2643,7 +2759,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      account_status: ["pending", "active", "suspended"],
+      account_status: ["pending", "active", "suspended", "waitlist"],
       admin_role: ["super_admin", "ops", "finance", "support"],
       attribution_source: [
         "link",
@@ -2653,6 +2769,7 @@ export const Constants = {
         "phone_match",
         "manual",
       ],
+      booking_mode: ["platform", "redirect", "enquiry"],
       booking_status: [
         "held",
         "confirmed",

@@ -6,7 +6,7 @@ import { requireCurrentOrg } from '@/lib/auth/guards'
 import { formatINR } from '@/lib/domain/money'
 import { STATUS_LABEL } from '@/lib/operator/status'
 
-export const metadata: Metadata = { title: 'Trips · TripLink operator', robots: { index: false } }
+export const metadata: Metadata = { title: 'Trips', robots: { index: false } }
 
 export default async function TripsPage() {
   const { supabase, org } = await requireCurrentOrg()
@@ -19,7 +19,7 @@ export default async function TripsPage() {
   const trips = (data ?? []) as { id: string; title: string; destination: string; status: string; duration_days: number; duration_nights: number; from_price_paise: number }[]
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <div className="max-w-3xl">
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Your trips</h1>
         <Link href="/operator/trips/new" className={buttonVariants()}>New trip</Link>
@@ -54,6 +54,6 @@ export default async function TripsPage() {
           })}
         </ul>
       )}
-    </main>
+    </div>
   )
 }

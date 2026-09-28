@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { requireUser } from '@/lib/auth/guards'
 import { ProfileForm } from './profile-form'
 
-export const metadata: Metadata = { title: 'Profile · TripLink', robots: { index: false } }
+export const metadata: Metadata = { title: 'Profile', robots: { index: false } }
 
 export default async function ProfilePage() {
   const user = await requireUser('/account/profile')

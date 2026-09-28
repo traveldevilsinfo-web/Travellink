@@ -9,7 +9,7 @@ export const OrgCreateSchema = z.object({
 })
 
 export const OrgDetailsSchema = z.object({
-  orgId: z.uuid(),
+  orgId: z.guid(),
   legalName: z.string().trim().min(2, 'Enter the legal name').max(160),
   gstin: z.string().trim().toUpperCase().regex(GSTIN_RE, 'Enter a valid 15-character GSTIN'),
   gstScheme: z.enum(['gst5_no_itc', 'gst18_with_itc']),
@@ -24,11 +24,11 @@ export const REQUIRED_ORG_KYC = ['pan', 'gst_certificate', 'cancelled_cheque'] a
 export const KycDocTypeSchema = z.enum(KYC_DOC_TYPES)
 
 export const OPERATOR_AGREEMENT_VERSION = 'v1'
-export const AcceptAgreementSchema = z.object({ orgId: z.uuid(), accept: z.literal(true, 'You must accept the agreement') })
+export const AcceptAgreementSchema = z.object({ orgId: z.guid(), accept: z.literal(true, 'You must accept the agreement') })
 
 export const ReviewDecisionSchema = z.discriminatedUnion('decision', [
-  z.object({ id: z.uuid(), decision: z.literal('approve') }),
-  z.object({ id: z.uuid(), decision: z.literal('reject'), notes: z.string().trim().min(5, 'Tell them what to fix').max(2000) }),
+  z.object({ id: z.guid(), decision: z.literal('approve') }),
+  z.object({ id: z.guid(), decision: z.literal('reject'), notes: z.string().trim().min(5, 'Tell them what to fix').max(2000) }),
 ])
 
 export type OrgCreateInput = z.input<typeof OrgCreateSchema>

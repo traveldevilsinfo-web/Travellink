@@ -10,7 +10,7 @@ import { revalidatePublicTrip } from '@/lib/public/revalidate'
 import { throwIfError } from '@/lib/supabase/errors'
 import { DepartureSchema } from '@/lib/validation/trips'
 
-const Id = z.uuid()
+const Id = z.guid()
 
 export async function saveDeparture(input: unknown): Promise<ActionResult> {
   try {

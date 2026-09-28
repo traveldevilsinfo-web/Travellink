@@ -22,7 +22,7 @@ import {
   TripDetailsSchema,
 } from '@/lib/validation/trips'
 
-const Id = z.uuid()
+const Id = z.guid()
 const MAX_MEDIA = 20
 
 function detailsRow(d: z.output<typeof TripDetailsSchema>) {

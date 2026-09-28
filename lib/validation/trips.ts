@@ -33,7 +33,7 @@ export const TripDetailsSchema = z
     exclusions: lines(30),
     highlights: lines(15),
     thingsToCarry: lines(40),
-    cancellationPolicyId: z.uuid('Pick a cancellation policy'),
+    cancellationPolicyId: z.guid('Pick a cancellation policy'),
   })
   .refine((t) => t.durationNights === t.durationDays || t.durationNights === t.durationDays - 1, {
     path: ['durationNights'],
@@ -74,7 +74,7 @@ export const DepartureSchema = z
     balanceDueDaysBefore: z.coerce.number<string | number>().int().min(0).max(90),
     bookingCutoffDays: z.coerce.number<string | number>().int().min(0).max(30),
     options: z
-      .array(z.object({ id: z.uuid().optional(), label: z.string().trim().min(2).max(60), priceRupees: rupees(1), isDefault: z.boolean() }))
+      .array(z.object({ id: z.guid().optional(), label: z.string().trim().min(2).max(60), priceRupees: rupees(1), isDefault: z.boolean() }))
       .min(1, 'Add at least one price option')
       .max(5),
   })
