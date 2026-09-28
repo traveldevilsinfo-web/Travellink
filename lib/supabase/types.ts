@@ -2527,6 +2527,12 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      storefront_trip_ids: {
+        Args: { p_handle: string }
+        Returns: {
+          trip_id: string
+        }[]
+      }
       trip_is_public: { Args: { p_trip: string }; Returns: boolean }
       trip_org: { Args: { p_trip: string }; Returns: string }
     }

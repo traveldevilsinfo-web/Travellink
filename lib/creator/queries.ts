@@ -63,7 +63,7 @@ export type StatRow = { day: string; link_id: string | null; clicks: number; uni
 
 export async function linksWithStats(sb: Sb, creatorId: string, sinceDay?: string) {
   const [links, stats] = await Promise.all([
-    sb.from('creator_links').select('id, code, label, trip_id, created_at, trips(title, slug)').eq('creator_id', creatorId).eq('is_active', true).order('created_at', { ascending: false }),
+    sb.from('creator_links').select('id, code, label, trip_id, created_at, trips!creator_links_trip_id_fkey(title, slug)').eq('creator_id', creatorId).eq('is_active', true).order('created_at', { ascending: false }),
     (sinceDay ? sb.from('creator_daily_stats').select('*').eq('creator_id', creatorId).gte('day', sinceDay) : sb.from('creator_daily_stats').select('*').eq('creator_id', creatorId)),
   ])
   const rows = (stats.data ?? []) as StatRow[]

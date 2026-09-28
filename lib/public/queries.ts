@@ -92,6 +92,7 @@ export async function tripsForDestination(slug: string) {
 }
 
 export type TripDetail = TripCard & {
+  booking_mode: 'platform' | 'redirect' | 'enquiry'; lead_fee_paise: number
   summary: string | null; description_md: string | null; start_city: string | null; difficulty: string | null
   min_age: number | null; max_group_size: number | null; inclusions: string[]; exclusions: string[]
   highlights: string[]; things_to_carry: string[]; updated_at: string; org_id: string
@@ -112,7 +113,7 @@ export async function tripBySlug(slug: string): Promise<TripDetail | null> {
   const { data } = await run<TripDetail | null>('tripBySlug',
     sb.from('trips')
       .select(`id, slug, title, destination, state, trip_type, duration_days, duration_nights, from_price_paise, cover_image_path,
-        summary, description_md, start_city, difficulty, min_age, max_group_size, inclusions, exclusions, highlights,
+        booking_mode, lead_fee_paise, summary, description_md, start_city, difficulty, min_age, max_group_size, inclusions, exclusions, highlights,
         things_to_carry, updated_at, org_id,
         organizations(name, slug, city, legal_name, gstin, rating_avg, rating_count),
         cancellation_policies(name, rules, deposit_non_refundable),
@@ -141,15 +142,22 @@ export async function publishedReviews(tripId: string) {
   )).data
 }
 
+export type PublicCreator = { id: string; handle: string; display_name: string; bio: string | null; avatar_url: string | null; cover_url: string | null; instagram_handle: string | null; instagram_followers: number | null; home_city: string | null }
+
 export async function creatorByHandle(handle: string) {
   const sb = createPublicClient()
-  const { data: creator } = await run<{ id: string; handle: string; display_name: string; bio: string | null; avatar_url: string | null; cover_url: string | null; instagram_handle: string | null; youtube_url: string | null; home_city: string | null } | null>(
-    'creator', sb.from('creators').select('id, handle, display_name, bio, avatar_url, cover_url, instagram_handle, youtube_url, home_city').eq('handle', handle.toLowerCase()).eq('status', 'active').maybeSingle(), null)
+  const { data: creator } = await run<PublicCreator | null>(
+    'creator', sb.from('creators').select('id, handle, display_name, bio, avatar_url, cover_url, instagram_handle, instagram_followers, home_city').eq('handle', handle.toLowerCase()).eq('status', 'active').maybeSingle(), null)
   if (!creator) return null
-  // ponytail: storefront curation (pick + order trips) is M4; for now show the trips they host.
-  const { data: hosted } = await run<TripCard[]>('hostedTrips',
-    sb.from('trips').select(CARD).eq('status', 'published').eq('hosted_by_creator_id', creator.id).limit(24), [])
-  return { creator, trips: hosted }
+  // Trips the creator links to (security-definer function; creator_links itself stays private) + trips they host.
+  // ponytail: ordering/collections arrive with storefront_items in Phase 2.
+  const { data: linked } = await run<{ trip_id: string }[]>('storefrontIds', sb.rpc('storefront_trip_ids', { p_handle: creator.handle }), [])
+  const ids = linked.map((r) => r.trip_id)
+  const { data: trips } = await run<TripCard[]>('storefrontTrips',
+    sb.from('trips').select(CARD).eq('status', 'published')
+      .or(ids.length ? `hosted_by_creator_id.eq.${creator.id},id.in.(${ids.join(',')})` : `hosted_by_creator_id.eq.${creator.id}`)
+      .order('published_at', { ascending: false }).limit(48), [])
+  return { creator, trips }
 }
 
 export async function sitemapEntries() {

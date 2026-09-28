@@ -35,7 +35,7 @@ const badgeVariants = cva(
 
 function Badge({
   className,
-  variant = "default",
+  variant = "neutral",
   render,
   ...props
 }: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {

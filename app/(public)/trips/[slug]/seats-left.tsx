@@ -26,17 +26,17 @@ export type DepartureRow = { id: string; dates: string; prices: string; deposit:
 export function DepartureList({ slug, rows }: { slug: string; rows: DepartureRow[] }) {
   const live = useLiveSeats(slug)
   return (
-    <ul className="divide-y rounded-lg border">
+    <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
       {rows.map((r) => {
         const l = live?.[r.id]
         const soldOut = l && (l.status === 'sold_out' || l.seatsLeft === 0)
         return (
-          <li key={r.id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
             <div>
-              <p className="font-medium">{r.dates}</p>
-              <p className="text-sm text-muted-foreground">{r.prices}{r.deposit && ` · book with ${r.deposit} deposit`}</p>
+              <p className="font-bold">{r.dates}</p>
+              <p className="text-sm text-ink-2">{r.prices}{r.deposit && ` · reserve with ${r.deposit}`}</p>
             </div>
-            <span className={`text-sm ${soldOut ? 'font-medium text-destructive' : l && l.seatsLeft <= 5 ? 'font-medium text-amber-700' : 'text-muted-foreground'}`}>
+            <span className={`inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-xs font-bold whitespace-nowrap ${soldOut ? 'bg-danger-50 text-danger' : l && l.seatsLeft <= 5 ? 'bg-warning-50 text-warning' : 'bg-subtle text-ink-2'}`}>
               {!l ? 'Checking seats…' : soldOut ? 'Sold out' : l.seatsLeft <= 5 ? `Only ${l.seatsLeft} seats left` : `${l.seatsLeft} seats left`}
             </span>
           </li>

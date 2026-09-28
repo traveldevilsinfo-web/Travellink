@@ -25,8 +25,10 @@ Secrets live only in Vercel env vars (Preview vs Production separated) and `.env
 |---|---|---|
 | — | M0–M3 foundations: auth, RLS, operator trip CMS, public trip pages | ✅ done |
 | — | Prototype design system, shells, creator join flow, catalog, Get link, links, earnings, operator shell | ✅ done (commit `cfc4aec`) |
-| **0** | Deploy pipeline | ⏭ next |
-| 1–8 | below | planned |
+| 0 | Deploy pipeline (Vercel team td-web1, previews behind Vercel login) | ✅ done |
+| 1 | Link tracking: /r redirect, signed cookie, trip landing + storefront restyle | ✅ done |
+| **2** | Instagram content + storefront editor | ⏭ next |
+| 3–8 | below | planned |
 
 ---
 
