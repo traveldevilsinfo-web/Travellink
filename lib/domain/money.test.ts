@@ -38,6 +38,8 @@ describe('pct', () => {
 
 describe('formatINR', () => {
   it('uses Indian digit grouping', () => {
-    expect(formatINR(2_100_000)).toBe('₹21,000.00')
+    expect(formatINR(2_100_000)).toBe('₹21,000')
+    expect(formatINR(2_100_050)).toBe('₹21,000.50')
+    expect(formatINR(1_00_00_000_00)).toBe('₹1,00,00,000')
   })
 })

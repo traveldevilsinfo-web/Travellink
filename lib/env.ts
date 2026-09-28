@@ -32,6 +32,11 @@ export const env = createEnv({
     IP_HASH_SALT: opt,
     CRON_SECRET: opt,
     SENTRY_AUTH_TOKEN: opt,
+    INSTAGRAM_APP_ID: opt,
+    INSTAGRAM_APP_SECRET: opt,
+    ALLOW_IG_SIMULATION: z.enum(['true', 'false']).optional(),
+    ALLOW_DEV_LOGIN: z.enum(['true', 'false']).optional(),
+    DEV_LOGIN_PASSWORD: opt,
   },
   // AGENTS.md rule 10: only these may be public.
   client: {

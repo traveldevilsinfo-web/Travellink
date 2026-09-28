@@ -1,7 +1,8 @@
 # TripLink — Phase 1 Architecture (Web)
 
 > **Working name:** TripLink. Swap it everywhere once you've chosen the brand.
-> **What it is:** a creator-led travel marketplace. Operators list group, experiential and package trips. Creators share tracked links and storefronts. Travelers book and pay on TripLink. Operators get paid through Razorpay Route, creators get commission through RazorpayX, and the platform keeps a fee.
+> **What it is (v2, Sep 2026):** **"Wishlink for travel"** — a travel affiliate platform. Operators list trips and set commissions; Instagram creators (1,000+ followers, verified via Instagram Login) pick trips, get tracked affiliate links for their reels and stories, and earn on the leads and bookings they drive; operators see every click, lead and booking per creator and link. **§20 is the v2 spec and overrides earlier sections where they conflict.**
+> **What it was (v1):** a creator-led travel marketplace. Operators list group, experiential and package trips. Creators share tracked links and storefronts. Travelers book and pay on TripLink. Operators get paid through Razorpay Route, creators get commission through RazorpayX, and the platform keeps a fee.
 > **Stack:** Next.js (App Router) on **Vercel** · **Supabase** (Postgres, Auth, Storage, pg_cron) · Razorpay (Checkout + Route + RazorpayX).
 > **Companion files:** `supabase/migrations/20261001000000_init.sql` (full schema, RLS, core functions, tested) · `AGENTS.md` (rules for your AI coding tool) · `.env.example`.
 
@@ -25,6 +26,9 @@
 | Creator payouts | Monthly (5th), 2% TDS, maker-checker approval | Compliance and fraud control |
 | Operator payouts | Route transfers **on hold**, released in tranches (50% at T-7 days, 50% at end+2 days) | Operators get cash to run the trip. You keep refund cover |
 | Mobile | Phase 2 (Expo/React Native) reuses `/api/v1` | Build the API cleanly now |
+| **Booking mode (v2)** | **Per trip:** `platform` (book + pay on TripLink, as in §6.2) or `redirect` / `enquiry` (traffic goes to the operator; operator reports bookings). See §20.3 | Operators without payment integration can join on day one; platform mode keeps perfect tracking |
+| **Creator earnings (v2)** | % commission on confirmed bookings **plus** an optional fixed fee per qualified lead, set by the operator per trip. See §20.4 | Rewards creators when travelers book later or offline |
+| **Creator gate (v2)** | Instagram Professional account connected via Instagram Login; **≥ 1,000 followers** to get links (`app_settings.creator.min_followers`). See §20.2 | Quality bar + automatic verification |
 
 ---
 
@@ -83,7 +87,7 @@
 - Audit log viewer (super_admin)
 
 ### Out of scope for Phase 1 (don't let the AI build these)
-International trips · hotel-only or flight bookings · EMI/BNPL · in-app chat between traveler and operator · native apps · multi-currency · creator-to-creator referrals · automated Instagram follower verification (manual in Phase 1) · dynamic pricing · operator channel-manager integrations.
+International trips · hotel-only or flight bookings · EMI/BNPL · in-app chat between traveler and operator · native apps · multi-currency · creator-to-creator referrals · ~~automated Instagram follower verification~~ (now in scope, §20.2) · Instagram DM automation / auto-reply to comments (Wishlink "Engage"; Phase 2) · dynamic pricing · operator channel-manager integrations.
 
 ---
 
@@ -747,3 +751,100 @@ WhatsApp templates must be pre-approved by Meta (utility category for transactio
 | Tax rates, section numbers, thresholds, invoice formats, GSTR-8 | ⚠️ CA | All stored in `app_settings.tax` |
 | Commission on retained amount after a late cancellation | You | Default: creator keeps it after confirmation |
 | Separate legal entity vs Nextorbit | You + CA | Affects GST/ECO registration |
+
+---
+
+## 20. v2 — Travel affiliate platform ("Wishlink for travel")
+
+Decided 28 Sep 2026. Where this section conflicts with §1–§19, **this section wins**. Everything else (security, RLS, money-in-paise, ledger, webhooks) still applies.
+
+### 20.1 The loop
+```
+Operator lists trip (commission %, optional lead fee, booking mode)
+   → admin approves → trip appears in the creator catalogue
+Creator connects Instagram (≥1,000 followers) → picks trip → gets link triplink.in/r/{code}
+   → posts reel/story with the link (+ #ad)
+Follower taps link → /r/{code} logs the click, sets tl_ref → lands on TripLink trip page
+   → books on TripLink   (booking_mode = platform)   → automatic attribution + commission
+   → or taps Enquire     (any mode)                   → lead with creator attribution (+ lead fee if enabled)
+   → or continues to operator site/WhatsApp (redirect) → click_id travels with them → operator reports booking
+Operator dashboard: clicks, leads, bookings, GMV, commission owed — per creator, per link, per trip
+Creator dashboard: the same funnel for their links + earnings with next dates + monthly payout
+```
+The trip page on TripLink is **always** the landing page (even for redirect trips). That keeps click logging, the lead form, the refund/trust info and attribution in our hands.
+
+### 20.2 Creator onboarding with Instagram
+- **Instagram API with Instagram Login** (OAuth directly with Instagram; no Facebook Page needed). Works only for **Professional accounts** (Creator or Business). Personal accounts get a screen explaining how to switch (free, 1 minute in the Instagram app).
+- Scopes: `instagram_business_basic` (profile + media) and `instagram_business_manage_insights` (reach/plays for the analytics tab).
+- Read on connect and daily: `username`, `name`, `profile_picture_url`, `followers_count`, `media_count`, recent media (`permalink`, `media_type`, `timestamp`, `like_count`, `comments_count`, `view_count` for reels).
+- **Gate:** `followers_count ≥ app_settings.creator.min_followers` (default 1,000) → creator `active`, can create links. Below → `waitlist` with "we'll re-check daily". Admin can override either way with an audited reason. Fraud signals for manual review: sudden follower jumps, very low engagement rate (likes+comments / followers), brand-new accounts.
+- Tokens: short-lived (1 h) → long-lived (60 days) → refreshed by cron before expiry. Stored **encrypted** (`lib/security/crypto.ts`) in a private table; never sent to the browser.
+- **⚠️ VERIFY / lead time:** reading *other people's* accounts needs **Advanced Access via Meta App Review** (business verification + demo video + per-permission proof; ~4–6 weeks). Start it now. Until approved: creators added as app testers during the pilot, or admin enters followers manually from a screenshot (same `waitlist → active` flow, audited).
+- YouTube is **not** in v2 scope (Phase 2).
+
+### 20.3 Booking modes (per trip)
+| Mode | Traveler flow | How the booking is known | How commission is collected |
+|---|---|---|---|
+| `platform` | Books and pays on TripLink (§6.2) | Razorpay webhook — automatic | Deducted at source from the Route transfer (§7.2) |
+| `redirect` | Trip page → "Book on operator's site" → operator URL with `?tl_click={click_id}` | Operator reports it: dashboard "Mark booked", **or** server-to-server postback `POST /api/v1/conversions` with `click_id`, **or** a JS pixel on their thank-you page | Monthly commission invoice to the operator (+ security deposit, see below) |
+| `enquiry` | Trip page → Enquire form / WhatsApp via our number → lead forwarded to the operator | Operator converts the lead in their dashboard (booking ref + amount) | Same as redirect |
+
+**Keeping redirect/enquiry honest** (the Wishlink "brand confirms" problem):
+- Every lead carries a `lead_id`; any booking by that phone within 90 days must be reported. We match reported bookings to leads by phone hash.
+- **Traveler check-in:** 7 days after a lead, WhatsApp the traveler "Did you book X with Y?" (utility template, opt-out). A "yes" without an operator report opens a dispute.
+- Operators with low report rates vs peers are flagged; persistent under-reporting → trips paused.
+- **Security deposit** per operator on redirect/enquiry trips (e.g. ₹10,000, admin-set), drawn down if an invoice goes unpaid.
+- Creator commissions from reported conversions become **payable only after the operator's invoice is paid** (we don't carry the credit risk).
+
+### 20.4 What creators earn
+- **Booking commission:** `% × taxable amount` (unchanged, §7). Operator sets it per trip (≥ `app_settings.commission.min_creator_pct`), with per-creator overrides (`commission_overrides`).
+- **Lead fee (optional, per trip):** fixed ₹ per *qualified* lead — valid Indian mobile verified by OTP or WhatsApp reply, not a duplicate within 30 days, not the creator's own number/device. The operator sets the fee and a monthly lead cap. Leads that later book get the booking commission **instead of**, not on top of, the lead fee (configurable).
+- Lifecycle: same buckets as §6.5 — `pending → confirmed → payable → paid`. Lead fees confirm after the 7-day qualification window. Reported bookings confirm when the trip date passes without a reported cancellation.
+
+### 20.5 Tracking model
+- `clicks` (exists): add a public `click_id` (short random token) that is passed to operator URLs and postbacks. Bot/UA filter + IP-hash dedupe as in §8.6.
+- Attribution unchanged (§6.1): code → lead → `tl_ref` cookie (last click, 90 days) → phone match.
+- Funnel per link: clicks → unique visitors → trip views → leads → bookings → GMV → commission. Rolled up every 15 min into `creator_daily_stats` (exists); add an operator-side rollup `org_daily_stats` by trip × creator × link.
+- UTM passthrough so operators also see TripLink traffic in their own analytics.
+
+### 20.6 Operator side (new screens)
+- **Performance:** totals (clicks, leads, bookings, GMV, commission owed) with a date range; a table by creator (IG handle, followers, clicks, leads, bookings, conversion %, GMV); drill down to each creator's links and reels.
+- **Leads inbox** (enquiry/redirect trips): new → contacted → booked / lost, with "Mark booked" (booking ref, travelers, amount). Contacts are shown because the operator is serving the lead; the lead stays attributed.
+- **Conversions & disputes:** reported bookings, traveler "yes" mismatches to resolve.
+- **Commission & billing:** monthly invoice, deposit balance, payment status.
+- **Creators:** browse approved creators (IG stats, niche, city), set per-creator commission, invite to a trip (a creator "collab" request). Phase 2: paid collaborations.
+- **Integrations:** postback API key (hashed, rotatable), pixel snippet, redirect URL per trip.
+
+### 20.7 Data model changes (new migrations; never edit old ones)
+- `creator_social_accounts` (private): creator_id, provider=`instagram`, ig_user_id, username, account_type, followers_count, media_count, token_encrypted, token_expires_at, last_synced_at. RLS: owner + admin read; writes server-only.
+- `creator_social_snapshots`: creator_id, day, followers_count, avg_reel_views, engagement_rate (for trends + fraud signals).
+- `creators.status` gains `waitlist`; eligibility computed from the latest snapshot vs `app_settings.creator.min_followers`.
+- `trips`: `booking_mode` enum (`platform` | `redirect` | `enquiry`), `redirect_url`, `lead_fee_paise`, `lead_fee_monthly_cap`.
+- `clicks`: `click_id` unique.
+- `leads`: `qualified_at`, `qualification_method`, `lead_fee_paise` snapshot, `fee_status`.
+- `conversions` (new): org_id, trip_id, departure/date, creator_id, link_id, click_id, lead_id, booking_ref, travelers, amount_paise, source (`dashboard` | `postback` | `pixel`), status (`reported` | `confirmed` | `cancelled` | `disputed`), reported_by. RLS: org members read/insert own; creators read only denormalised commission rows (never traveler data).
+- `commissions`: add `kind` (`booking` | `lead`) and `source` (`platform_booking` | `conversion` | `lead`); `booking_id` becomes nullable with a check that exactly one of booking_id / conversion_id / lead_id is set.
+- `org_billing` (private): deposit balance, invoice series; `operator_invoices` + ledger recipes for commission receivable.
+- `org_api_keys`: hashed postback keys per org.
+- `org_daily_stats`: operator-side rollup.
+
+### 20.8 Revised build order (replaces §17 from M4 onward)
+The affiliate loop ships **before** payments, so Travel Devils and the first creators can go live without Razorpay Route activation.
+
+| # | Milestone | Scope | Acceptance |
+|---|---|---|---|
+| M4 | Creators + Instagram | Instagram Login, token storage + refresh cron, 1,000-follower gate, waitlist, admin override, creator catalogue with commission, links + QR + caption with #ad, `/r/{code}` with click_id + cookie, storefront curation | A 999-follower account is waitlisted, a 1,000 one gets links; click → cookie → trip page; tampered cookie ignored |
+| M5 | Leads + operator performance | Enquire form (OTP-verified) + WhatsApp handoff, lead qualification + lead fee, operator Performance + Leads inbox, creator funnel analytics, `org_daily_stats` | Lead from a creator link shows under that creator for the operator and as a pending lead fee for the creator |
+| M6 | Redirect conversions + billing | booking_mode per trip, redirect with click_id, "Mark booked", postback API + pixel, traveler check-in + disputes, monthly operator invoice + deposit | Postback with a valid click_id creates a pending commission; invalid key → 401; replay → no duplicate |
+| M7 | Creator payouts | KYC (PAN encrypt, RazorpayX), payout run with maker-checker, TDS, statements (old M9) | Payout only includes commissions whose operator invoice is paid |
+| M8 | Platform checkout | Old M5 + M6 (Razorpay, Route) for `platform` trips | As old M5/M6 |
+| M9+ | Balance/cancel/refunds, lifecycle, trust & support, hardening | Old M7, M8, M11, M12 | As before |
+
+### 20.9 New open items
+| Item | Owner | Note |
+|---|---|---|
+| Meta business verification + App Review for `instagram_business_basic`, `instagram_business_manage_insights` | You | Start now: 4–6 weeks. Needs privacy policy URL, data deletion callback, demo video |
+| Lead fee defaults and caps | You + operators | Suggest ₹100 per qualified lead, cap 200/month per trip |
+| Security deposit size for redirect/enquiry operators | You + CA | Also check GST treatment of the deposit |
+| Commission receivable from operators (redirect mode): invoice + GST 18% on the commission as our service fee | ⚠️ CA | Different from platform mode, where we deduct at source |
+| Whether the lead fee replaces or adds to booking commission | You | Default: replaces |

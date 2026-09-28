@@ -9,7 +9,7 @@ Next.js (App Router, TypeScript strict) · Tailwind + shadcn/ui · Supabase (`@s
 ## Hard rules: never break these
 1. **Money is integer paise (`bigint` in DB, `number` safe-integer or `bigint` in TS).** No floats for amounts. All money math lives in `lib/domain/money.ts` and `lib/domain/pricing.ts` and comes with unit tests.
 2. **Never trust the client for prices, amounts, commission %, attribution or user IDs.** Recompute on the server from DB rows.
-3. **Service-role Supabase client only in `lib/supabase/admin.ts`**, which has `import 'server-only'`. Never import it in components, pages or any `"use client"` file. Use it only in webhooks, cron, money writes and admin actions *after* `requireAdmin()`.
+3. **Service-role Supabase client only in `lib/supabase/admin.ts`**, which has `import 'server-only'`. Never import it in components, pages or any `"use client"` file. Use it only in webhooks, cron, money writes, admin actions *after* `requireAdmin()`, **OAuth callbacks that store provider-verified data** (Instagram followers and reels — `lib/creator/connect.ts`, `lib/creator/sync.ts`; the creator id must come from the session or the cron), the **`/r/[code]` click logger** (`lib/tracking/click.ts`; anonymous followers, no client write path to clicks), and **enquiry capture** (`lib/leads/capture.ts`; anonymous travelers, only after server-side OTP verification).
 4. **Every table has RLS enabled.** New tables need policies in the same migration. Money, ledger, webhook and audit tables get **no** client insert/update/delete policies.
 5. **Schema changes only through new files in `supabase/migrations/`** (`supabase migration new <name>`). Never edit an existing migration. Never change the schema in the dashboard. Regenerate types after every migration: `supabase gen types typescript --local > lib/supabase/types.ts`.
 6. **Every server action and route handler starts with:** auth guard → zod parse → rate limit (if user-facing) → domain service call. No business logic in components.
@@ -42,7 +42,8 @@ Next.js (App Router, TypeScript strict) · Tailwind + shadcn/ui · Supabase (`@s
 - [ ] Explains in the PR/summary: what changed, security impact, migrations added
 
 ## Build order (one milestone per session; see ARCHITECTURE §17)
-M0 Foundations → M1 Auth & roles → M2 Operator + trip CMS → M3 Public site → M4 Creator + links → M5 Checkout + payments → M6 Route settlements → M7 Balance/cancel/refunds → M8 Lifecycle + dashboards → M9 Payouts → M10 WhatsApp leads → M11 Trust & support → M12 Hardening.
+**v2 order (ARCHITECTURE §20.8 — the product is now "Wishlink for travel"; §20 overrides earlier sections):**
+M0 Foundations ✓ → M1 Auth & roles ✓ → M2 Operator + trip CMS ✓ → M3 Public site ✓ → M4 Creators + Instagram (1,000-follower gate) + links → M5 Leads + operator performance → M6 Redirect conversions + operator billing → M7 Creator payouts → M8 Platform checkout (Razorpay + Route) → M9+ refunds, lifecycle, trust, hardening.
 
 ### Starter prompt per milestone
 > "Implement milestone **M{n}** from ARCHITECTURE.md §17. First list the files you'll create or change and any migration needed, then wait for my OK. Follow AGENTS.md hard rules. Write the domain unit tests first for anything touching money, seats, attribution or refunds. At the end, show how each acceptance criterion is met."

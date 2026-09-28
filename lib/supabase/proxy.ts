@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/lib/env'
 
-// Refreshes the auth session cookie on every request. Role gates + /@handle rewrite land in M1.
+/** Refreshes the auth cookie and returns the verified claims (null if signed out). */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
   const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
@@ -15,6 +15,13 @@ export async function updateSession(request: NextRequest) {
       },
     },
   })
-  await supabase.auth.getClaims()
-  return response
+  const { data } = await supabase.auth.getClaims()
+  return { response, claims: data?.claims ?? null }
+}
+
+/** Redirect that keeps any refreshed auth cookies. */
+export function redirectWithCookies(url: URL, from: NextResponse) {
+  const res = NextResponse.redirect(url)
+  from.cookies.getAll().forEach((c) => res.cookies.set(c))
+  return res
 }

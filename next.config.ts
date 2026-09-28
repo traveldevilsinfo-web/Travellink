@@ -10,7 +10,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://checkout.razorpay.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabase}`,
+  `img-src 'self' data: blob: ${supabase} https://*.cdninstagram.com https://*.fbcdn.net`,
   "font-src 'self'",
   `connect-src 'self' ${supabase} ${supabaseWs} https://api.razorpay.com https://lumberjack.razorpay.com`,
   'frame-src https://api.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com',
@@ -32,6 +32,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: supabase ? { remotePatterns: [new URL(`${supabase}/storage/v1/object/public/**`)] } : undefined,
+  experimental: {
+    // trip photos are ≤10 MB (ARCHITECTURE §3); one file per action call + multipart overhead
+    serverActions: { bodySizeLimit: '11mb' },
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
